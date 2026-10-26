@@ -52,6 +52,7 @@ const QUIEN: Record<Orden['tipo'], { aprueba: Rol[]; entrega: Rol[]; recibe: Rol
   requisicion_mp: { aprueba: ['inventario'], entrega: ['bodeguero', 'inventario'], recibe: ['jefe_produccion'], anula: ['inventario'] },
   entrega_pt: { aprueba: ['bodeguero'], entrega: ['jefe_produccion'], recibe: ['bodeguero', 'inventario'], anula: ['bodeguero'] },
   despacho: { aprueba: ['bodeguero'], entrega: ['despacho', 'bodeguero'], recibe: ['despacho'], anula: ['bodeguero'] },
+  repuestos: { aprueba: ['inventario'], entrega: ['bodeguero', 'inventario'], recibe: ['mantenimiento'], anula: ['inventario'] },
 }
 
 export function OrdenDetalle() {
@@ -140,6 +141,7 @@ export function OrdenDetalle() {
     <Pantalla titulo={orden.numero} atras>
       <Tarjeta titulo={<>{TIPO_ORDEN[orden.tipo]} <Estado valor={orden.estado} /></>}>
         {op && <div>Producción: <Link to={`/produccion/${op.id}`}>{op.numero}</Link></div>}
+        {orden.orden_trabajo_id && <div><Link to={`/mantenimiento/${orden.orden_trabajo_id}`}>Ver la orden de trabajo</Link></div>}
         {venta && <div>Venta: <Link to={`/ventas/${venta.id}`}>{venta.numero}</Link> · {venta.cliente}</div>}
         {orden.notas && !venta && <div className="texto-suave">{orden.notas}</div>}
         <ol className="pasos">
@@ -158,7 +160,7 @@ export function OrdenDetalle() {
 
       {lineas.map((l) => {
         const it = items.get(l.item_id)
-        const u = it?.unidad === 'saco' ? 'sacos' : it?.unidad ?? ''
+        const u = it?.unidad === 'saco' ? 'sacos' : it?.unidad === 'unidad' ? 'unidades' : it?.unidad ?? ''
         const suyas = asignaciones.filter((a) => a.orden_linea_id === l.id)
         return (
           <Tarjeta key={l.id} titulo={it?.nombre}>

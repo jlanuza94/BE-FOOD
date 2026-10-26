@@ -5,6 +5,7 @@ import { useSesion } from '../lib/sesion'
 import { cordobas, fecha, fechaHora } from '../lib/formato'
 import { FORMAS_PAGO, type CuentaPorPagar, type OrdenCompra, type OrdenCompraLinea, type PagoProveedor } from '../lib/tipos'
 import { Boton, Campo, Cargando, Entrada, MensajeError, Estado, Fila, Nota, Pantalla, Selector, Tarjeta, Texto, Vacio } from '../components/ui'
+import { ElegirCuenta, cuentaONulo } from '../components/ElegirCuenta'
 import { TomarFoto, VerFoto } from '../components/Fotos'
 
 export function Pagos() {
@@ -44,9 +45,9 @@ function FacturaProveedor({ cuenta: c, pagos, proveedor, alCambiar }: {
   const { puede, perfil, personas } = useSesion()
   const { ocupado, error, correr } = useAccion()
   const [monto, setMonto] = useState('')
-  const [pago, setPago] = useState<Record<number, { forma: string; referencia: string; fotos: string[]; motivo: string }>>({})
+  const [pago, setPago] = useState<Record<number, { forma: string; referencia: string; fotos: string[]; motivo: string; cuenta: string }>>({})
   const hacer = (f: () => Promise<unknown>) => correr(f).then((ok) => { if (ok) { setMonto(''); alCambiar() } })
-  const datosPago = (id: number) => pago[id] ?? { forma: 'transferencia', referencia: '', fotos: [], motivo: '' }
+  const datosPago = (id: number) => pago[id] ?? { forma: 'transferencia', referencia: '', fotos: [], motivo: '', cuenta: '' }
   const libre = Number(c.saldo) - Number(c.en_tramite)
   const vence = Number(c.saldo) > 0 && c.dias_para_vencer <= 3
 
@@ -86,10 +87,12 @@ function FacturaProveedor({ cuenta: c, pagos, proveedor, alCambiar }: {
                 <Campo etiqueta="Número de transferencia o cheque">
                   <Entrada value={d.referencia} onChange={(e) => setPago({ ...pago, [p.id]: { ...d, referencia: e.target.value } })} />
                 </Campo>
+                <ElegirCuenta valor={d.cuenta} onCambio={(v) => setPago({ ...pago, [p.id]: { ...d, cuenta: v } })} etiqueta="¿De qué caja o banco sale?" />
                 <TomarFoto carpeta="comprobantes" etiqueta="Foto del comprobante (obligatoria)" fotos={d.fotos}
                   onCambio={(f) => setPago({ ...pago, [p.id]: { ...d, fotos: f.slice(-1) } })} />
                 <Boton ocupado={ocupado} onClick={() => hacer(() => rpc('registrar_pago_hecho', {
                   p_pago_id: p.id, p_forma: d.forma, p_referencia: d.referencia || null, p_comprobante_url: d.fotos[0] ?? null,
+                  p_cuenta_id: cuentaONulo(d.cuenta),
                 }))}>Registrar pago hecho</Boton>
               </>
             )}

@@ -6,6 +6,7 @@ import { useSesion } from '../lib/sesion'
 import { cordobas, fecha, fechaHora, num } from '../lib/formato'
 import { FORMAS_PAGO, type Abono, type CuentaPorCobrar } from '../lib/tipos'
 import { Boton, BotonWhatsApp, Campo, Cargando, Entrada, MensajeError, Fila, Nota, Pantalla, Selector, Tarjeta, Vacio } from '../components/ui'
+import { ElegirCuenta, cuentaONulo } from '../components/ElegirCuenta'
 import { TomarFoto, VerFoto } from '../components/Fotos'
 
 export function Cobros() {
@@ -63,6 +64,7 @@ export function FacturaDetalle() {
   const [forma, setForma] = useState('efectivo')
   const [referencia, setReferencia] = useState('')
   const [fotos, setFotos] = useState<string[]>([])
+  const [cuenta, setCuenta] = useState('')
   const { ocupado, error: errorAccion, correr } = useAccion()
 
   if (!datos) return <Pantalla titulo="Factura" atras><Cargando cargando={cargando} error={error} /></Pantalla>
@@ -70,6 +72,7 @@ export function FacturaDetalle() {
 
   const abonar = () => correr(() => rpc('registrar_abono', {
     p_factura_id: id, p_monto: Number(monto), p_forma: forma, p_referencia: referencia || null, p_foto_url: fotos[0] ?? null,
+    p_cuenta_id: cuentaONulo(cuenta),
   })).then((ok) => { if (ok) { setMonto(''); setReferencia(''); setFotos([]); recargar() } })
 
   return (
@@ -115,6 +118,7 @@ export function FacturaDetalle() {
               <Entrada value={referencia} onChange={(e) => setReferencia(e.target.value)} />
             </Campo>
           )}
+          <ElegirCuenta valor={cuenta} onCambio={setCuenta} etiqueta="¿A qué caja o banco entra?" />
           <TomarFoto carpeta="abonos" etiqueta="Foto del recibo" fotos={fotos} onCambio={(x) => setFotos(x.slice(-1))} />
           <MensajeError mensaje={errorAccion} />
           <Boton onClick={abonar} ocupado={ocupado}>Guardar abono</Boton>

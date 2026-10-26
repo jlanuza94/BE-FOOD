@@ -25,7 +25,9 @@ export function textoResumen(r: ResumenDia): string {
     `Por cobrar: ${cordobas(r.por_cobrar)} (vencido ${cordobas(r.por_cobrar_vencido)})`,
     `Por pagar: ${cordobas(r.por_pagar)}`,
     `Sacos en bodega: ${num(r.sacos_en_bodega)}`,
-  ].join('\n')
+    r.dinero !== null ? `Dinero en caja y bancos: ${cordobas(r.dinero)}` : '',
+    r.equipos_parados > 0 ? `Máquinas paradas: ${r.equipos_parados}` : '',
+  ].filter(Boolean).join('\n')
 }
 
 /** El negocio de hoy en una sola pantalla, para el dueño. */
@@ -49,6 +51,8 @@ export function Tablero() {
         <Cifra titulo="Por pagar" valor={cordobas(r.por_pagar)} a="/pagos" />
         <Cifra titulo="Sacos en bodega" valor={num(r.sacos_en_bodega)} a="/inventario" />
         <Cifra titulo="Gastos de hoy" valor={cordobas(r.gastos)} a="/gastos" />
+        {r.dinero !== null && <Cifra titulo="Caja y bancos" valor={cordobas(r.dinero)} a="/dinero" />}
+        <Cifra titulo="Máquinas paradas" valor={num(r.equipos_parados)} a="/equipos" clase={Number(r.equipos_parados) > 0 ? 'texto-error' : ''} />
       </div>
       {Number(r.por_cobrar_vencido) > 0 && (
         <div className="texto-suave texto-error">Hay {cordobas(r.por_cobrar_vencido)} vencido por cobrar.</div>

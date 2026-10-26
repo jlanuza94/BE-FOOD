@@ -24,6 +24,10 @@ import { Costos } from './pages/Costos'
 import { Utilidad } from './pages/Utilidad'
 import { Bitacora } from './pages/Bitacora'
 import { Escanear } from './pages/Escanear'
+import { CuentaDetalle, Dinero, FlujoCaja } from './pages/Dinero'
+import { EmpleadoDetalle, EmpleadoNuevo, Empleados, MarcarAsistencia } from './pages/Personal'
+import { PlanillaDetalle, Planillas } from './pages/Planilla'
+import { EquipoDetalle, Equipos, Mantenimiento, OrdenTrabajoDetalle, ReportarFalla, Viajes } from './pages/Mantenimiento'
 
 export function App() {
   const { sesion, perfil, cargando } = useSesion()
@@ -64,6 +68,21 @@ export function App() {
         <Route path="/gastos" element={<Gastos />} />
         <Route path="/costos" element={<Costos />} />
         <Route path="/utilidad" element={<Utilidad />} />
+        <Route path="/dinero" element={<Dinero />} />
+        <Route path="/dinero/:id" element={<CuentaDetalle />} />
+        <Route path="/flujo" element={<FlujoCaja />} />
+        <Route path="/asistencia" element={<MarcarAsistencia />} />
+        <Route path="/empleados" element={<Empleados />} />
+        <Route path="/empleados/nuevo" element={<EmpleadoNuevo />} />
+        <Route path="/empleados/:id" element={<EmpleadoDetalle />} />
+        <Route path="/planilla" element={<Planillas />} />
+        <Route path="/planilla/:id" element={<PlanillaDetalle />} />
+        <Route path="/mantenimiento" element={<Mantenimiento />} />
+        <Route path="/mantenimiento/falla" element={<ReportarFalla />} />
+        <Route path="/mantenimiento/:id" element={<OrdenTrabajoDetalle />} />
+        <Route path="/equipos" element={<Equipos />} />
+        <Route path="/equipos/:id" element={<EquipoDetalle />} />
+        <Route path="/viajes" element={<Viajes />} />
         <Route path="/avisos" element={<Avisos />} />
         <Route path="/bitacora" element={<Bitacora />} />
         <Route path="/escanear" element={<Escanear />} />

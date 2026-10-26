@@ -1,8 +1,8 @@
 import { leer, supabase } from '../lib/supabase'
 import { useDatos } from '../lib/usar'
 import { useSesion } from '../lib/sesion'
-import { num } from '../lib/formato'
-import type { InventarioItem, NotaBitacora, Rol } from '../lib/tipos'
+import { hoyISO, num } from '../lib/formato'
+import type { Cuenta, InventarioItem, NotaBitacora, Rol } from '../lib/tipos'
 import { Link } from 'react-router-dom'
 import { Cargando, Nota, Pantalla, Tarjeta } from '../components/ui'
 import { Tablero } from '../components/Tablero'
@@ -44,6 +44,25 @@ const PENDIENTES: Pendiente[] = [
     contar: () => contar('pagos_proveedor').eq('estado', 'aprobado') },
   { texto: 'Facturas de clientes vencidas', a: '/cobros', roles: ['administracion', 'vendedor'],
     contar: () => contar('cuentas_por_cobrar').gt('saldo', 0).gt('dias_atraso', 0) },
+  { texto: 'Adelantos de salario por aprobar', a: '/empleados', roles: [],
+    contar: () => contar('adelantos').eq('estado', 'solicitado') },
+  { texto: 'Planillas por aprobar', a: '/planilla', roles: [],
+    contar: () => contar('planillas').eq('estado', 'borrador') },
+  { texto: 'Planillas aprobadas por pagar', a: '/planilla', roles: ['administracion'],
+    contar: () => contar('planillas').eq('estado', 'aprobada') },
+  { texto: 'Cajas sin cerrar hoy', a: '/dinero', roles: ['administracion'],
+    contar: async () => {
+      const cuentas = (await leer(supabase.from('saldos_cuentas').select('*').eq('activa', true).neq('tipo', 'banco'))) as Cuenta[]
+      return { count: cuentas.filter((c) => (c.ultimo_cierre ?? '') < hoyISO()).length }
+    } },
+  { texto: 'Órdenes de trabajo abiertas', a: '/mantenimiento', roles: ['mantenimiento'],
+    contar: () => contar('ordenes_trabajo').in('estado', ['abierta', 'en_proceso']) },
+  { texto: 'Repuestos por aprobar', a: '/ordenes', roles: ['inventario'],
+    contar: () => contar('ordenes').eq('estado', 'pedida').eq('tipo', 'repuestos') },
+  { texto: 'Repuestos por entregar', a: '/ordenes', roles: ['bodeguero', 'inventario'],
+    contar: () => contar('ordenes').eq('estado', 'aprobada').eq('tipo', 'repuestos') },
+  { texto: 'Repuestos por recibir', a: '/ordenes', roles: ['mantenimiento'],
+    contar: () => contar('ordenes').eq('estado', 'entregada').eq('tipo', 'repuestos') },
   { texto: 'Ajustes de inventario por autorizar', a: '/conteos', roles: [],
     contar: () => contar('conteos').eq('estado', 'pendiente') },
 ]
