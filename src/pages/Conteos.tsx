@@ -6,7 +6,7 @@ import { useSesion } from '../lib/sesion'
 import { fechaHora, num } from '../lib/formato'
 import { Boton, Campo, Cargando, Entrada, MensajeError, Estado, Fila, Nota, Pantalla, Tarjeta, Texto, Vacio } from '../components/ui'
 
-interface PorContar { lote_id: number; codigo: string; item: string; unidad: string; ubicacion: string | null; ultimo_conteo: string | null }
+export interface PorContar { lote_id: number; codigo: string; item: string; unidad: string; ubicacion: string | null }
 interface Conteo {
   id: number; lote_id: number; cantidad_sistema: number; cantidad_contada: number; diferencia: number
   motivo: string | null; estado: string; contado_por: string; contado_en: string
@@ -26,6 +26,9 @@ export function Conteos() {
       <Cargando cargando={cargando && !datos} error={error} />
       {datos && puede('bodeguero', 'inventario') && (
         <>
+          <Tarjeta a="/conteo-general" titulo="📋 Conteo general">
+            <div className="texto-suave">Contar toda la bodega o una ubicación de una vez</div>
+          </Tarjeta>
           <h2>Contar hoy</h2>
           <Nota>Cuente sin mirar el sistema. Si no cuadra, la app le pedirá la explicación.</Nota>
           {datos.hoy.length === 0 && <Vacio>Ya se contó todo lo de hoy.</Vacio>}
@@ -55,7 +58,8 @@ export function Conteos() {
   )
 }
 
-function ContarLote({ lote, alGuardar }: { lote: PorContar; alGuardar: () => void }) {
+/** Conteo a ciegas de un lote: no muestra lo que dice el sistema. */
+export function ContarLote({ lote, conteoGeneralId, alGuardar }: { lote: PorContar; conteoGeneralId?: number; alGuardar: () => void }) {
   const [cantidad, setCantidad] = useState('')
   const [motivo, setMotivo] = useState('')
   const { ocupado, error, correr } = useAccion()
@@ -72,9 +76,10 @@ function ContarLote({ lote, alGuardar }: { lote: PorContar; alGuardar: () => voi
         </Campo>
       )}
       <MensajeError mensaje={error} />
-      <Boton ocupado={ocupado} disabled={cantidad === ''} onClick={() => correr(() => rpc('registrar_conteo', {
-        p_lote_id: lote.lote_id, p_cantidad: Number(cantidad), p_motivo: motivo || null,
-      })).then((ok) => ok && alGuardar())}>Guardar conteo</Boton>
+      <Boton ocupado={ocupado} disabled={cantidad === ''} onClick={() => correr(() => conteoGeneralId
+        ? rpc('contar_en_conteo_general', { p_conteo_general_id: conteoGeneralId, p_lote_id: lote.lote_id, p_cantidad: Number(cantidad), p_motivo: motivo || null })
+        : rpc('registrar_conteo', { p_lote_id: lote.lote_id, p_cantidad: Number(cantidad), p_motivo: motivo || null }),
+      ).then((ok) => ok && alGuardar())}>Guardar conteo</Boton>
     </Tarjeta>
   )
 }

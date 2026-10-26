@@ -28,6 +28,8 @@ const OPCIONES: { a: string; texto: string; detalle: string; roles: Rol[] }[] = 
   { a: '/produccion', texto: 'Producción', detalle: 'Órdenes de producción y etapas', roles: ['jefe_produccion', 'operador', 'calidad', 'inventario'] },
   { a: '/merma', texto: 'Merma', detalle: 'Por lote, turno y operador', roles: ['jefe_produccion', 'socio'] },
   { a: '/formulas', texto: 'Fórmulas', detalle: 'Recetas y sus versiones', roles: ['jefe_produccion', 'calidad', 'inventario'] },
+  { a: '/conteo-general', texto: 'Conteo general', detalle: 'Contar toda la bodega de una vez', roles: ['inventario', 'bodeguero'] },
+  { a: '/inventario-inicial', texto: 'Inventario inicial', detalle: 'Cargar lo que ya había al empezar', roles: ['inventario'] },
   { a: '/compras', texto: 'Compras', detalle: 'Órdenes de compra', roles: ['inventario'] },
   { a: '/conteos', texto: 'Conteo cíclico', detalle: 'Lo que toca contar hoy', roles: ['inventario', 'bodeguero'] },
   { a: '/usuarios', texto: 'Usuarios', detalle: 'Activar personas y darles su rol', roles: [] },
