@@ -9,6 +9,7 @@ import {
   type Asignacion, type Etapa, type Formula, type FormulaLinea, type Orden, type OrdenLinea, type OrdenProduccion, type Turno,
 } from '../lib/tipos'
 import { Boton, Campo, Cargando, Entrada, MensajeError, Estado, Fila, Nota, Pantalla, Selector, Tarjeta, Texto, Vacio } from '../components/ui'
+import { Comentarios } from '../components/Comentarios'
 
 export function Produccion() {
   const { items, puede } = useSesion()
@@ -352,6 +353,7 @@ export function ProduccionDetalle() {
           </Boton>
         </Tarjeta>
       )}
+      <Comentarios entidad="orden_produccion" id={id} />
     </Pantalla>
   )
 }

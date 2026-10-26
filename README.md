@@ -20,7 +20,7 @@ Esta es la **Etapa 1** del documento "La aplicación de control, explicada paso 
 1. **Crear la base de datos.** Entre a [supabase.com](https://supabase.com), cree una cuenta gratis y un
    proyecto nuevo (región *East US*). Guarde la contraseña que le pide.
 2. **Cargar las reglas.** En Supabase abra **SQL Editor**, pegue el contenido de cada archivo de
-   `supabase/migrations/` **en orden** (001, 002, 003) y presione **Run** en cada uno.
+   `supabase/migrations/` **en orden** (001, 002, 003… hasta el último) y presione **Run** en cada uno.
 3. **Usuarios sin confirmar correo.** En **Authentication → Sign In / Providers → Email**, apague
    *Confirm email*. Así los trabajadores entran sin revisar su correo.
 4. **Copiar las llaves.** En **Project Settings → API** copie *Project URL* y la llave *anon public*.

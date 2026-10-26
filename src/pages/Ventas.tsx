@@ -6,6 +6,7 @@ import { useSesion } from '../lib/sesion'
 import { cordobas, fechaHora, num } from '../lib/formato'
 import type { Cliente, CuentaPorCobrar, InventarioItem, Orden, VentaLinea, VentaResumen } from '../lib/tipos'
 import { Boton, Campo, Cargando, Entrada, MensajeError, Estado, Fila, Nota, Pantalla, Selector, Tarjeta, Texto, Vacio } from '../components/ui'
+import { Comentarios } from '../components/Comentarios'
 
 export function Ventas() {
   const [filtro, setFiltro] = useState<'abiertas' | 'todas'>('abiertas')
@@ -186,6 +187,7 @@ export function VentaDetalle() {
           </Boton>
         </Tarjeta>
       )}
+      <Comentarios entidad="venta" id={id} />
     </Pantalla>
   )
 }

@@ -25,7 +25,7 @@ export function Inventario() {
   )
 
   return (
-    <Pantalla titulo="Inventario">
+    <Pantalla titulo="Inventario" accion={<Link to="/escanear" className="encabezado-accion" aria-label="Escanear QR">📷</Link>}>
       <div className="pestanas">
         <button className={vista === 'productos' ? 'activa' : ''} onClick={() => setVista('productos')}>Por producto</button>
         <button className={vista === 'lotes' ? 'activa' : ''} onClick={() => setVista('lotes')}>Por lote</button>

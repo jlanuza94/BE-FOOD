@@ -97,6 +97,23 @@ export interface Aviso {
   id: number; creado_en: string; tipo: string; mensaje: string; enlace: string | null; leido_por: string[]
 }
 
+export type EntidadComentario = 'orden' | 'orden_produccion' | 'venta' | 'orden_compra'
+
+export interface Comentario {
+  id: number; entidad: EntidadComentario; entidad_id: number; texto: string; autor: string; creado_en: string
+}
+
+export interface NotaBitacora {
+  id: number; fecha: string; turno: Turno; area: string; nota: string; importante: boolean
+  foto_url: string | null; autor: string; creado_en: string
+}
+
+export interface ResumenDia {
+  fecha: string; sacos_producidos: number; merma_pct: number | null; ventas: number; sacos_vendidos: number
+  utilidad: number; cobrado: number; gastos: number; por_cobrar: number; por_cobrar_vencido: number
+  por_pagar: number; sacos_en_bodega: number; por_aprobar: number; stock_bajo: number
+}
+
 /** Los roles que pueden ver costos, gastos y utilidad (el vendedor no). */
 export const VEN_COSTOS: Rol[] = ['socio', 'administracion', 'inventario', 'jefe_produccion']
 

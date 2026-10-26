@@ -2,8 +2,10 @@ import { leer, supabase } from '../lib/supabase'
 import { useDatos } from '../lib/usar'
 import { useSesion } from '../lib/sesion'
 import { num } from '../lib/formato'
-import type { InventarioItem, Rol } from '../lib/tipos'
+import type { InventarioItem, NotaBitacora, Rol } from '../lib/tipos'
+import { Link } from 'react-router-dom'
 import { Cargando, Nota, Pantalla, Tarjeta } from '../components/ui'
+import { Tablero } from '../components/Tablero'
 
 interface Pendiente { texto: string; a: string; roles: Rol[]; contar: () => PromiseLike<{ count: number | null }> }
 
@@ -47,26 +49,44 @@ const PENDIENTES: Pendiente[] = [
 ]
 
 export function Inicio() {
-  const { perfil, puede } = useSesion()
+  const { perfil, puede, personas } = useSesion()
+  const esDueno = perfil?.rol === 'gerencia' || perfil?.rol === 'socio'
   const { datos, cargando, error } = useDatos(async () => {
     const mios = PENDIENTES.filter((p) => puede(...p.roles))
     const cuentas = await Promise.all(mios.map((p) => p.contar()))
     const bajos = (await leer(supabase.from('inventario_items').select('*').gt('stock_minimo', 0))) as InventarioItem[]
     const avisos = await supabase.from('avisos').select('id, leido_por').order('id', { ascending: false }).limit(100)
+    const ayer = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
+    const notas = (await leer(supabase.from('bitacora').select('*').eq('importante', true).gte('creado_en', ayer)
+      .order('id', { ascending: false }).limit(5))) as NotaBitacora[]
     return {
       pendientes: mios.map((p, i) => ({ ...p, n: cuentas[i].count ?? 0 })).filter((p) => p.n > 0),
       bajos: bajos.filter((b) => Number(b.disponible) < Number(b.stock_minimo)),
       sinLeer: (avisos.data ?? []).filter((a) => !(a.leido_por as string[]).includes(perfil!.id)).length,
+      notas,
     }
   }, [perfil?.id])
 
   return (
     <Pantalla titulo={`Hola, ${perfil?.nombre.split(' ')[0]}`}>
+      <Link to="/escanear" className="boton boton-principal boton-escanear boton-enlace">📷 Escanear QR de un lote</Link>
+      {esDueno && <Tablero />}
       <Cargando cargando={cargando && !datos} error={error} />
       {datos && (
         <>
           {datos.sinLeer > 0 && (
             <Tarjeta a="/avisos" titulo={`🔔 ${datos.sinLeer} aviso${datos.sinLeer === 1 ? '' : 's'} sin leer`} />
+          )}
+          {datos.notas.length > 0 && (
+            <>
+              <h2>Notas importantes del turno</h2>
+              {datos.notas.map((n) => (
+                <Tarjeta key={n.id} a="/bitacora" titulo={`⚠️ ${n.area}`}>
+                  <div>{n.nota}</div>
+                  <div className="texto-suave">{personas.get(n.autor)?.nombre}</div>
+                </Tarjeta>
+              ))}
+            </>
           )}
           <h2>Lo que le toca</h2>
           {datos.pendientes.length === 0 && <Nota>No tiene nada pendiente. 👍</Nota>}
