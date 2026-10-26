@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { leer, rpc, supabase } from '../lib/supabase'
+import { leer, rpc, subirFoto, supabase } from '../lib/supabase'
 import { useAccion, useDatos } from '../lib/usar'
 import { useSesion } from '../lib/sesion'
 import { fechaHora, num } from '../lib/formato'
 import { TIPO_ORDEN, type Asignacion, type LoteInventario, type Orden, type OrdenLinea, type Rol } from '../lib/tipos'
 import { Boton, Campo, Cargando, Entrada, MensajeError, Estado, Nota, Pantalla, Tarjeta, Texto, Vacio } from '../components/ui'
+import { Firma } from '../components/Firma'
+import { VerFoto } from '../components/Fotos'
 
 export function Ordenes() {
   const [filtro, setFiltro] = useState<'abiertas' | 'todas'>('abiertas')
@@ -21,7 +23,7 @@ export function Ordenes() {
         <button className={filtro === 'abiertas' ? 'activa' : ''} onClick={() => setFiltro('abiertas')}>Abiertas</button>
         <button className={filtro === 'todas' ? 'activa' : ''} onClick={() => setFiltro('todas')}>Todas</button>
       </div>
-      <Nota>Producción pide materia prima desde su orden de producción, en el menú Producción.</Nota>
+      <Nota>Las órdenes nacen de una producción (materia prima y sacos) o de una venta (despacho).</Nota>
       <Cargando cargando={cargando && !datos} error={error} />
       {datos?.length === 0 && <Vacio>No hay órdenes {filtro === 'abiertas' ? 'abiertas' : ''}.</Vacio>}
       {datos?.map((o) => (
@@ -39,12 +41,15 @@ interface Detalle {
   asignaciones: Asignacion[]
   lotes: Map<number, LoteInventario>
   op: { id: number; numero: string } | null
+  venta: { id: number; numero: string; cliente: string } | null
+  entrega: { recibido_por_nombre: string; firma_url: string } | null
 }
 
 // Quién hace cada paso según el tipo de orden (la base de datos lo vuelve a revisar).
 const QUIEN: Record<Orden['tipo'], { aprueba: Rol[]; entrega: Rol[]; recibe: Rol[]; anula: Rol[] }> = {
   requisicion_mp: { aprueba: ['inventario'], entrega: ['bodeguero', 'inventario'], recibe: ['jefe_produccion'], anula: ['inventario'] },
   entrega_pt: { aprueba: ['bodeguero'], entrega: ['jefe_produccion'], recibe: ['bodeguero', 'inventario'], anula: ['bodeguero'] },
+  despacho: { aprueba: ['bodeguero'], entrega: ['despacho', 'bodeguero'], recibe: ['despacho'], anula: ['bodeguero'] },
 }
 
 export function OrdenDetalle() {
@@ -62,17 +67,26 @@ export function OrdenDetalle() {
     const op = orden.orden_produccion_id
       ? ((await leer(supabase.from('ordenes_produccion').select('id, numero').eq('id', orden.orden_produccion_id).single())) as { id: number; numero: string })
       : null
-    return { orden, lineas, asignaciones, lotes: new Map(lotes.map((l) => [l.id, l])), op }
+    const venta = orden.venta_id
+      ? ((await leer(supabase.from('ventas_resumen').select('id, numero, cliente').eq('id', orden.venta_id).single())) as { id: number; numero: string; cliente: string })
+      : null
+    const entrega = orden.tipo === 'despacho'
+      ? ((await leer(supabase.from('entregas_cliente').select('*').eq('orden_id', id).maybeSingle())) as { recibido_por_nombre: string; firma_url: string } | null)
+      : null
+    return { orden, lineas, asignaciones, lotes: new Map(lotes.map((l) => [l.id, l])), op, venta, entrega }
   }, [id])
 
   const [cantidades, setCantidades] = useState<Record<number, string>>({})
   const [motivos, setMotivos] = useState<Record<number, string>>({})
   const [motivoAnular, setMotivoAnular] = useState('')
   const [anulando, setAnulando] = useState(false)
+  const [recibe, setRecibe] = useState('')
+  const [firma, setFirma] = useState<File | null>(null)
   const { ocupado, error: errorAccion, correr } = useAccion()
 
   if (!datos) return <Pantalla titulo="Orden" atras><Cargando cargando={cargando} error={error} /></Pantalla>
-  const { orden, lineas, asignaciones, lotes, op } = datos
+  const { orden, lineas, asignaciones, lotes, op, venta, entrega } = datos
+  const esDespacho = orden.tipo === 'despacho'
   const quien = QUIEN[orden.tipo]
   const nombre = (uid: string | null) => (uid ? personas.get(uid)?.nombre ?? '—' : '—')
   const valor = (clave: number, porDefecto: number | null) => cantidades[clave] ?? String(porDefecto ?? '')
@@ -96,13 +110,19 @@ export function OrdenDetalle() {
       p_orden_id: id,
       p_entregas: asignaciones.map((a) => ({ asignacion_id: a.id, cantidad: Number(valor(a.id, a.cantidad_asignada)) })),
     }))
+  const recepciones = () => asignaciones.map((a) => ({
+    asignacion_id: a.id, cantidad: Number(valor(a.id, a.cantidad_entregada)), motivo: motivos[a.id] ?? null,
+  }))
   const recibir = () =>
-    accion(() => rpc('recibir_orden', {
-      p_orden_id: id,
-      p_recepciones: asignaciones.map((a) => ({
-        asignacion_id: a.id, cantidad: Number(valor(a.id, a.cantidad_entregada)), motivo: motivos[a.id] ?? null,
-      })),
-    }))
+    accion(async () => {
+      if (!esDespacho) return rpc('recibir_orden', { p_orden_id: id, p_recepciones: recepciones() })
+      // En un despacho, el cliente firma lo que recibió y con eso sale la factura.
+      if (!firma) throw new Error('Falta la firma del cliente.')
+      const ruta = await subirFoto('firmas', firma)
+      return rpc('confirmar_entrega_cliente', {
+        p_orden_id: id, p_recepciones: recepciones(), p_recibido_por: recibe, p_firma_url: ruta,
+      })
+    })
   const anular = () => accion(() => rpc('anular_orden', { p_orden_id: id, p_motivo: motivoAnular }))
 
   const paso = orden.estado
@@ -115,13 +135,17 @@ export function OrdenDetalle() {
     <Pantalla titulo={orden.numero} atras>
       <Tarjeta titulo={<>{TIPO_ORDEN[orden.tipo]} <Estado valor={orden.estado} /></>}>
         {op && <div>Producción: <Link to={`/produccion/${op.id}`}>{op.numero}</Link></div>}
-        {orden.notas && <div className="texto-suave">{orden.notas}</div>}
+        {venta && <div>Venta: <Link to={`/ventas/${venta.id}`}>{venta.numero}</Link> · {venta.cliente}</div>}
+        {orden.notas && !venta && <div className="texto-suave">{orden.notas}</div>}
         <ol className="pasos">
           <li className="hecho">Pedida · {nombre(orden.pedida_por)} · {fechaHora(orden.pedida_en)}</li>
           <li className={orden.aprobada_en ? 'hecho' : ''}>Aprobada · {nombre(orden.aprobada_por)} · {fechaHora(orden.aprobada_en)}</li>
           <li className={orden.entregada_en ? 'hecho' : ''}>Entregada · {nombre(orden.entregada_por)} · {fechaHora(orden.entregada_en)}</li>
-          <li className={orden.recibida_en ? 'hecho' : ''}>Recibida · {nombre(orden.recibida_por)} · {fechaHora(orden.recibida_en)}</li>
+          <li className={orden.recibida_en ? 'hecho' : ''}>
+            Recibida · {entrega ? `${entrega.recibido_por_nombre} (cliente)` : nombre(orden.recibida_por)} · {fechaHora(orden.recibida_en)}
+          </li>
         </ol>
+        {entrega && <div className="fotos"><VerFoto ruta={entrega.firma_url} /></div>}
         {orden.estado === 'anulada' && (
           <MensajeError mensaje={`Anulada por ${nombre(orden.anulada_por)} el ${fechaHora(orden.anulada_en)}: ${orden.motivo_anulacion}`} />
         )}
@@ -129,7 +153,7 @@ export function OrdenDetalle() {
 
       {lineas.map((l) => {
         const it = items.get(l.item_id)
-        const u = it?.unidad ?? ''
+        const u = it?.unidad === 'saco' ? 'sacos' : it?.unidad ?? ''
         const suyas = asignaciones.filter((a) => a.orden_linea_id === l.id)
         return (
           <Tarjeta key={l.id} titulo={it?.nombre}>
@@ -209,7 +233,17 @@ export function OrdenDetalle() {
         </>
       )}
       {puedeEntregar && <Boton onClick={entregar} ocupado={ocupado}>Confirmar lo entregado</Boton>}
-      {puedeRecibir && <Boton onClick={recibir} ocupado={ocupado}>Confirmar lo recibido</Boton>}
+      {puedeRecibir && esDespacho && (
+        <Tarjeta titulo="Entrega al cliente">
+          <Campo etiqueta="Nombre de quien recibe">
+            <Entrada value={recibe} onChange={(e) => setRecibe(e.target.value)} />
+          </Campo>
+          <Firma onCambio={setFirma} />
+        </Tarjeta>
+      )}
+      {puedeRecibir && (
+        <Boton onClick={recibir} ocupado={ocupado}>{esDespacho ? 'Confirmar entrega y hacer factura' : 'Confirmar lo recibido'}</Boton>
+      )}
       {puedeAnular && !anulando && <Boton variante="secundario" onClick={() => setAnulando(true)}>Anular orden</Boton>}
       {anulando && (
         <Tarjeta titulo="Anular orden">

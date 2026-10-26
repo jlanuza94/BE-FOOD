@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { leer, supabase } from './supabase'
-import type { Item, Perfil, Proveedor, Rol, Ubicacion } from './tipos'
+import { VEN_COSTOS, type Item, type Perfil, type Proveedor, type Rol, type Ubicacion } from './tipos'
 
 interface Sesion {
   sesion: Session | null
@@ -14,6 +14,8 @@ interface Sesion {
   recargarCatalogos: () => Promise<void>
   /** Gerencia puede todo; los demás solo lo de sus roles. */
   puede: (...roles: Rol[]) => boolean
+  /** Si puede ver costos, gastos y utilidad (el vendedor no). */
+  veCostos: boolean
 }
 
 const Contexto = createContext<Sesion | null>(null)
@@ -78,7 +80,10 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
 
   return (
     <Contexto.Provider
-      value={{ sesion, perfil, cargando, personas, items, ubicaciones, proveedores, recargarCatalogos, puede }}
+      value={{
+        sesion, perfil, cargando, personas, items, ubicaciones, proveedores, recargarCatalogos, puede,
+        veCostos: puede(...VEN_COSTOS),
+      }}
     >
       {children}
     </Contexto.Provider>
