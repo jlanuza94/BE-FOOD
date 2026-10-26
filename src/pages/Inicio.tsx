@@ -1,0 +1,85 @@
+import { leer, supabase } from '../lib/supabase'
+import { useDatos } from '../lib/usar'
+import { useSesion } from '../lib/sesion'
+import { num } from '../lib/formato'
+import type { InventarioItem, Rol } from '../lib/tipos'
+import { Cargando, Nota, Pantalla, Tarjeta } from '../components/ui'
+
+interface Pendiente { texto: string; a: string; roles: Rol[]; contar: () => PromiseLike<{ count: number | null }> }
+
+const contar = (tabla: string) => supabase.from(tabla).select('id', { count: 'exact', head: true })
+
+const PENDIENTES: Pendiente[] = [
+  { texto: 'Órdenes de materia prima por aprobar', a: '/ordenes', roles: ['inventario'],
+    contar: () => contar('ordenes').eq('estado', 'pedida').eq('tipo', 'requisicion_mp') },
+  { texto: 'Órdenes por entregar', a: '/ordenes', roles: ['bodeguero'],
+    contar: () => contar('ordenes').eq('estado', 'aprobada').eq('tipo', 'requisicion_mp') },
+  { texto: 'Materia prima por recibir en Producción', a: '/ordenes', roles: ['jefe_produccion'],
+    contar: () => contar('ordenes').eq('estado', 'entregada').eq('tipo', 'requisicion_mp') },
+  { texto: 'Sacos por entregar a bodega', a: '/ordenes', roles: ['jefe_produccion'],
+    contar: () => contar('ordenes').eq('estado', 'aprobada').eq('tipo', 'entrega_pt') },
+  { texto: 'Sacos por recibir en bodega', a: '/ordenes', roles: ['bodeguero', 'inventario'],
+    contar: () => contar('ordenes').eq('estado', 'entregada').eq('tipo', 'entrega_pt') },
+  { texto: 'Lotes en cuarentena por revisar', a: '/calidad', roles: ['calidad'],
+    contar: () => contar('lotes').eq('estado', 'cuarentena') },
+  { texto: 'Órdenes de producción por aprobar', a: '/produccion', roles: [],
+    contar: () => contar('ordenes_produccion').eq('estado', 'pendiente') },
+  { texto: 'Producción en curso', a: '/produccion', roles: ['jefe_produccion', 'operador'],
+    contar: () => contar('ordenes_produccion').in('estado', ['aprobada', 'en_proceso']) },
+  { texto: 'Órdenes de compra por aprobar', a: '/compras', roles: [],
+    contar: () => contar('ordenes_compra').eq('estado', 'pendiente') },
+  { texto: 'Compras por recibir', a: '/recepcion', roles: ['inventario', 'bodeguero'],
+    contar: () => contar('ordenes_compra').eq('estado', 'aprobada') },
+  { texto: 'Ajustes de inventario por autorizar', a: '/conteos', roles: [],
+    contar: () => contar('conteos').eq('estado', 'pendiente') },
+]
+
+export function Inicio() {
+  const { perfil, puede } = useSesion()
+  const { datos, cargando, error } = useDatos(async () => {
+    const mios = PENDIENTES.filter((p) => puede(...p.roles))
+    const cuentas = await Promise.all(mios.map((p) => p.contar()))
+    const bajos = (await leer(supabase.from('inventario_items').select('*').gt('stock_minimo', 0))) as InventarioItem[]
+    const avisos = await supabase.from('avisos').select('id, leido_por').order('id', { ascending: false }).limit(100)
+    return {
+      pendientes: mios.map((p, i) => ({ ...p, n: cuentas[i].count ?? 0 })).filter((p) => p.n > 0),
+      bajos: bajos.filter((b) => Number(b.disponible) < Number(b.stock_minimo)),
+      sinLeer: (avisos.data ?? []).filter((a) => !(a.leido_por as string[]).includes(perfil!.id)).length,
+    }
+  }, [perfil?.id])
+
+  return (
+    <Pantalla titulo={`Hola, ${perfil?.nombre.split(' ')[0]}`}>
+      <Cargando cargando={cargando && !datos} error={error} />
+      {datos && (
+        <>
+          {datos.sinLeer > 0 && (
+            <Tarjeta a="/avisos" titulo={`🔔 ${datos.sinLeer} aviso${datos.sinLeer === 1 ? '' : 's'} sin leer`} />
+          )}
+          <h2>Lo que le toca</h2>
+          {datos.pendientes.length === 0 && <Nota>No tiene nada pendiente. 👍</Nota>}
+          {datos.pendientes.map((p) => (
+            <Tarjeta key={p.texto} a={p.a}>
+              <div className="pendiente">
+                <span className="pendiente-n">{p.n}</span>
+                <span>{p.texto}</span>
+              </div>
+            </Tarjeta>
+          ))}
+          {datos.bajos.length > 0 && (
+            <>
+              <h2>Se está acabando</h2>
+              {datos.bajos.map((b) => (
+                <Tarjeta key={b.id} a="/inventario" titulo={b.nombre}>
+                  <div className="texto-suave">
+                    Disponible {num(b.disponible)} {b.unidad} · mínimo {num(b.stock_minimo)}
+                  </div>
+                </Tarjeta>
+              ))}
+            </>
+          )}
+        </>
+      )}
+    </Pantalla>
+  )
+}
