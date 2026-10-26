@@ -73,6 +73,7 @@ const COLOR_ESTADO: Record<string, string> = {
   pendiente: 'azul', en_proceso: 'morado', terminada: 'verde',
   cuadrado: 'verde', ajustado: 'verde',
   abierta: 'azul', completa: 'verde', solicitado: 'azul', aprobado: 'amarillo', pagado: 'verde',
+  entregado: 'verde', borrador: 'azul', pagada: 'verde',
 }
 
 const TEXTO_ESTADO: Record<string, string> = {

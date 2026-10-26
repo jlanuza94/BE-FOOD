@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { leer, rpc, supabase } from '../lib/supabase'
 import { useAccion, useDatos } from '../lib/usar'
 import { useSesion } from '../lib/sesion'
-import { cordobas, fecha } from '../lib/formato'
+import { cordobas, fecha, hoyISO } from '../lib/formato'
 import { CATEGORIAS_GASTO, type Gasto } from '../lib/tipos'
 import { Boton, Campo, Cargando, Entrada, MensajeError, Fila, Pantalla, Selector, Tarjeta, Texto, Vacio } from '../components/ui'
+import { ElegirCuenta, cuentaONulo } from '../components/ElegirCuenta'
 import { TomarFoto, VerFoto } from '../components/Fotos'
 
 const inicioMes = () => new Date().toISOString().slice(0, 8) + '01'
@@ -14,8 +15,10 @@ export function Gastos() {
   const { datos, cargando, error, recargar } = useDatos(
     async () => (await leer(supabase.from('gastos').select('*').order('fecha', { ascending: false }).order('id', { ascending: false }).limit(200))) as Gasto[],
   )
-  const [form, setForm] = useState({ fecha: new Date().toISOString().slice(0, 10), categoria: 'luz', descripcion: '', monto: '', incluir: true })
+  const [form, setForm] = useState({ fecha: hoyISO(), categoria: 'luz', descripcion: '', monto: '', incluir: true, cuenta: '', ot: '' })
   const [fotos, setFotos] = useState<string[]>([])
+  const { datos: ots } = useDatos(async () => (await leer(supabase.from('ordenes_trabajo').select('id, numero, descripcion')
+    .order('id', { ascending: false }).limit(30))) as { id: number; numero: string; descripcion: string }[])
   const [anular, setAnular] = useState<{ id: number; motivo: string } | null>(null)
   const { ocupado, error: errorAccion, correr } = useAccion()
   const delMes = (datos ?? []).filter((g) => !g.anulado && g.fecha >= inicioMes())
@@ -24,6 +27,7 @@ export function Gastos() {
   const guardar = () => correr(() => rpc('registrar_gasto', {
     p_fecha: form.fecha, p_categoria: form.categoria, p_descripcion: form.descripcion, p_monto: Number(form.monto),
     p_incluir_en_costo: form.incluir, p_foto_url: fotos[0] ?? null,
+    p_cuenta_id: cuentaONulo(form.cuenta), p_orden_trabajo_id: form.ot ? Number(form.ot) : null,
   })).then((ok) => { if (ok) { setForm({ ...form, descripcion: '', monto: '' }); setFotos([]); recargar() } })
 
   return (
@@ -45,6 +49,15 @@ export function Gastos() {
             <input type="checkbox" checked={form.incluir} onChange={(e) => setForm({ ...form, incluir: e.target.checked })} />
             Es gasto de la planta (entra al costo del saco)
           </label>
+          <ElegirCuenta valor={form.cuenta} onCambio={(v) => setForm({ ...form, cuenta: v })} etiqueta="¿De qué caja o banco sale?" textoVacio="Caja general" />
+          {form.categoria === 'mantenimiento' && (
+            <Campo etiqueta="Orden de trabajo (opcional)">
+              <Selector value={form.ot} onChange={(e) => setForm({ ...form, ot: e.target.value })}>
+                <option value="">Ninguna</option>
+                {(ots ?? []).map((o) => <option key={o.id} value={o.id}>{o.numero} · {o.descripcion.slice(0, 40)}</option>)}
+              </Selector>
+            </Campo>
+          )}
           <TomarFoto carpeta="gastos" etiqueta="Foto del recibo" fotos={fotos} onCambio={(f) => setFotos(f.slice(-1))} />
           <MensajeError mensaje={errorAccion} />
           <Boton onClick={guardar} ocupado={ocupado}>Guardar gasto</Boton>

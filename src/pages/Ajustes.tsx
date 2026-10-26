@@ -8,6 +8,7 @@ import { Boton, Campo, Cargando, Entrada, MensajeError, Fila, Nota, Pantalla, Se
 
 const TIPOS: Record<Item['tipo'], string> = {
   materia_prima: 'Materia prima', empaque: 'Empaque (sacos vacíos, hilo…)', producto_terminado: 'Alimento terminado',
+  repuesto: 'Repuesto (fajas, rodos, filtros…)',
 }
 
 async function guardar(consulta: PromiseLike<{ error: { message: string } | null }>) {
@@ -50,7 +51,7 @@ export function Catalogos() {
             {Object.entries(TIPOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </Selector>
         </Campo>
-        <Campo etiqueta={`Stock mínimo (${item.tipo === 'materia_prima' ? 'lb' : 'unidades'})`}>
+        <Campo etiqueta={`Stock mínimo (${item.tipo === 'materia_prima' ? 'lb' : item.tipo === 'repuesto' ? 'unidades' : 'sacos'})`}>
           <Entrada type="number" inputMode="decimal" value={item.stock_minimo} onChange={(e) => setItem({ ...item, stock_minimo: e.target.value })} />
         </Campo>
         <Campo etiqueta="Días que dura antes de vencer">
@@ -68,7 +69,7 @@ export function Catalogos() {
         )}
         <Boton ocupado={ocupado} onClick={() => hacer(() => guardar(supabase.from('items').insert({
           codigo: item.codigo, nombre: item.nombre.trim(), tipo: item.tipo,
-          unidad: item.tipo === 'materia_prima' ? 'lb' : 'saco',
+          unidad: item.tipo === 'materia_prima' ? 'lb' : item.tipo === 'repuesto' ? 'unidad' : 'saco',
           stock_minimo: Number(item.stock_minimo || 0),
           vida_util_dias: item.vida_util_dias ? Number(item.vida_util_dias) : null,
           peso_saco_lb: esPT ? Number(item.peso_saco_lb) : null,

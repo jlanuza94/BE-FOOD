@@ -20,3 +20,9 @@ const moneda = new Intl.NumberFormat('es-NI', { minimumFractionDigits: 2, maximu
 export function cordobas(n: number | null | undefined): string {
   return n === null || n === undefined ? '—' : `C$ ${moneda.format(Number(n))}`
 }
+
+/** Fecha de hoy en el celular, como AAAA-MM-DD. */
+export function hoyISO(): string {
+  const d = new Date()
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
+}

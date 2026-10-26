@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { useSesion } from '../lib/sesion'
-import { ROLES, VEN_COSTOS, type Rol } from '../lib/tipos'
+import { ROLES, VEN_COSTOS, VEN_DINERO, type Rol } from '../lib/tipos'
 import { useState } from 'react'
 import { Boton, Campo, Pantalla, Selector, Tarjeta } from '../components/ui'
 import { aplicarTema, temaGuardado, TEMAS, type Tema } from '../lib/tema'
@@ -12,7 +12,13 @@ const OPCIONES: { a: string; texto: string; detalle: string; roles: Rol[] }[] = 
   { a: '/cobros', texto: 'Cobros', detalle: 'Facturas y abonos de clientes', roles: ['administracion', 'vendedor', 'socio'] },
   { a: '/pagos', texto: 'Pagos a proveedores', detalle: 'Facturas, aprobación y comprobantes', roles: ['administracion', 'inventario', 'socio'] },
   { a: '/gastos', texto: 'Gastos', detalle: 'Luz, salarios, transporte y demás', roles: ['administracion', 'socio'] },
+  { a: '/dinero', texto: 'Caja y bancos', detalle: 'Saldos, cierre de caja y flujo', roles: VEN_DINERO },
+  { a: '/empleados', texto: 'Personal', detalle: 'Empleados, adelantos y vacaciones', roles: VEN_DINERO },
+  { a: '/planilla', texto: 'Planilla', detalle: 'Quincena con INSS e IR', roles: VEN_DINERO },
   { a: '/costos', texto: 'Costo por saco', detalle: 'Cuánto cuesta y cuánto se gana', roles: VEN_COSTOS },
+  { a: '/asistencia', texto: 'Marcar asistencia', detalle: 'Entrada y salida con foto', roles: [] },
+  { a: '/mantenimiento', texto: 'Mantenimiento', detalle: 'Reportar fallas, máquinas y vehículos', roles: [] },
+  { a: '/viajes', texto: 'Viajes', detalle: 'Kilometraje y combustible', roles: ['despacho', 'administracion'] },
   { a: '/bitacora', texto: 'Bitácora de turno', detalle: 'Notas del turno que sale al que entra', roles: [] },
   { a: '/escanear', texto: 'Escanear QR', detalle: 'Ver si un lote se puede usar', roles: [] },
   { a: '/ordenes', texto: 'Órdenes', detalle: 'Pedir, aprobar, entregar y recibir', roles: [] },
