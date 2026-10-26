@@ -63,6 +63,8 @@ const PENDIENTES: Pendiente[] = [
     contar: () => contar('ordenes').eq('estado', 'aprobada').eq('tipo', 'repuestos') },
   { texto: 'Repuestos por recibir', a: '/ordenes', roles: ['mantenimiento'],
     contar: () => contar('ordenes').eq('estado', 'entregada').eq('tipo', 'repuestos') },
+  { texto: 'Conteo general en curso', a: '/conteo-general', roles: ['inventario', 'bodeguero'],
+    contar: () => contar('conteos_generales').eq('estado', 'abierto') },
   { texto: 'Ajustes de inventario por autorizar', a: '/conteos', roles: [],
     contar: () => contar('conteos').eq('estado', 'pendiente') },
 ]

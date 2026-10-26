@@ -27,6 +27,7 @@ import { Escanear } from './pages/Escanear'
 import { CuentaDetalle, Dinero, FlujoCaja } from './pages/Dinero'
 import { EmpleadoDetalle, EmpleadoNuevo, Empleados, MarcarAsistencia } from './pages/Personal'
 import { PlanillaDetalle, Planillas } from './pages/Planilla'
+import { ConteoGeneralDetalle, ConteosGenerales, InventarioInicial } from './pages/InventarioInicial'
 import { EquipoDetalle, Equipos, Mantenimiento, OrdenTrabajoDetalle, ReportarFalla, Viajes } from './pages/Mantenimiento'
 
 export function App() {
@@ -68,6 +69,9 @@ export function App() {
         <Route path="/gastos" element={<Gastos />} />
         <Route path="/costos" element={<Costos />} />
         <Route path="/utilidad" element={<Utilidad />} />
+        <Route path="/inventario-inicial" element={<InventarioInicial />} />
+        <Route path="/conteo-general" element={<ConteosGenerales />} />
+        <Route path="/conteo-general/:id" element={<ConteoGeneralDetalle />} />
         <Route path="/dinero" element={<Dinero />} />
         <Route path="/dinero/:id" element={<CuentaDetalle />} />
         <Route path="/flujo" element={<FlujoCaja />} />
