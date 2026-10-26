@@ -19,7 +19,8 @@ export function Catalogos() {
   const { items, ubicaciones, proveedores, recargarCatalogos } = useSesion()
   const config = useDatos(async () => (await leer(supabase.from('configuracion').select('*').order('clave'))) as { clave: string; valor: number; descripcion: string }[])
   const { ocupado, error, correr } = useAccion()
-  const [item, setItem] = useState({ codigo: '', nombre: '', tipo: 'materia_prima' as Item['tipo'], stock_minimo: '', vida_util_dias: '', peso_saco_lb: '100' })
+  const [item, setItem] = useState({ codigo: '', nombre: '', tipo: 'materia_prima' as Item['tipo'], stock_minimo: '', vida_util_dias: '', peso_saco_lb: '100', precio_venta: '' })
+  const [precios, setPrecios] = useState<Record<number, string>>({})
   const [ubicacion, setUbicacion] = useState('')
   const [proveedor, setProveedor] = useState({ nombre: '', telefono: '' })
   const [valores, setValores] = useState<Record<string, string>>({})
@@ -56,9 +57,14 @@ export function Catalogos() {
           <Entrada type="number" inputMode="numeric" value={item.vida_util_dias} onChange={(e) => setItem({ ...item, vida_util_dias: e.target.value })} />
         </Campo>
         {esPT && (
-          <Campo etiqueta="Peso del saco (lb)">
-            <Entrada type="number" inputMode="decimal" value={item.peso_saco_lb} onChange={(e) => setItem({ ...item, peso_saco_lb: e.target.value })} />
-          </Campo>
+          <>
+            <Campo etiqueta="Peso del saco (lb)">
+              <Entrada type="number" inputMode="decimal" value={item.peso_saco_lb} onChange={(e) => setItem({ ...item, peso_saco_lb: e.target.value })} />
+            </Campo>
+            <Campo etiqueta="Precio de venta por saco (C$)">
+              <Entrada type="number" inputMode="decimal" value={item.precio_venta} onChange={(e) => setItem({ ...item, precio_venta: e.target.value })} />
+            </Campo>
+          </>
         )}
         <Boton ocupado={ocupado} onClick={() => hacer(() => guardar(supabase.from('items').insert({
           codigo: item.codigo, nombre: item.nombre.trim(), tipo: item.tipo,
@@ -66,7 +72,25 @@ export function Catalogos() {
           stock_minimo: Number(item.stock_minimo || 0),
           vida_util_dias: item.vida_util_dias ? Number(item.vida_util_dias) : null,
           peso_saco_lb: esPT ? Number(item.peso_saco_lb) : null,
-        })), () => setItem({ ...item, codigo: '', nombre: '', stock_minimo: '', vida_util_dias: '' }))}>Agregar producto</Boton>
+          precio_venta: esPT && item.precio_venta ? Number(item.precio_venta) : null,
+        })), () => setItem({ ...item, codigo: '', nombre: '', stock_minimo: '', vida_util_dias: '', precio_venta: '' }))}>Agregar producto</Boton>
+      </Tarjeta>
+
+      <Tarjeta titulo="Precios de venta">
+        {[...items.values()].filter((i) => i.tipo === 'producto_terminado').map((i) => (
+          <Campo key={i.id} etiqueta={`${i.nombre} (C$ por saco)`}>
+            <div className="linea-numeros">
+              <Entrada type="number" inputMode="decimal" value={precios[i.id] ?? String(i.precio_venta ?? '')}
+                onChange={(e) => setPrecios({ ...precios, [i.id]: e.target.value })} />
+              {precios[i.id] !== undefined && (
+                <Boton variante="secundario" ocupado={ocupado} onClick={() => hacer(
+                  () => guardar(supabase.from('items').update({ precio_venta: Number(precios[i.id]) }).eq('id', i.id)),
+                  () => setPrecios({}),
+                )}>Guardar</Boton>
+              )}
+            </div>
+          </Campo>
+        ))}
       </Tarjeta>
 
       <Tarjeta titulo="Ubicaciones">

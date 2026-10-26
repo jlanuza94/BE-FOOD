@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { leer, supabase } from '../lib/supabase'
+import { leer, rpc, supabase } from '../lib/supabase'
 import { useDatos } from '../lib/usar'
 import { useSesion } from '../lib/sesion'
-import { fecha, fechaHora, num } from '../lib/formato'
+import { cordobas, fecha, fechaHora, num } from '../lib/formato'
 import type { InventarioItem, LoteInventario } from '../lib/tipos'
 import { Boton, Cargando, Entrada, Estado, Fila, Pantalla, Tarjeta, Vacio } from '../components/ui'
 import { EtiquetaQR } from '../components/EtiquetaQR'
@@ -73,18 +73,21 @@ export function Inventario() {
 
 interface Movimiento { id: number; fecha: string; tipo: string; cantidad: number; saldo_lote: number; referencia: string | null; nota: string | null; usuario: string }
 interface Inspeccion { id: number; resultado: string; revision: Record<string, boolean>; observaciones: string | null; fotos: string[]; inspector_id: string; fecha: string }
+interface EntregaCliente { orden_id: number; orden: string; venta_id: number; venta: string; cliente: string; sacos: number; recibida_en: string; recibido_por_nombre: string | null }
+interface CostoLote { costo_unitario: number; costo_materia_prima: number | null; gasto_planta: number | null; costo_total: number | null }
 interface Consumo { orden_produccion_id: number; op_numero: string; lote_pt_id: number | null; lote_pt: string | null; lote_mp_id: number; lote_mp: string; item: string; unidad: string; cantidad_recibida: number; recibido_por: string | null; recibida_en: string | null }
 
 const TIPO_MOV: Record<string, string> = {
   recepcion_compra: 'Recepción de compra',
   salida_requisicion: 'Salida a Producción',
+  salida_despacho: 'Despacho a cliente',
   entrada_produccion: 'Entrada de Producción',
   ajuste_conteo: 'Ajuste por conteo',
 }
 
 export function LoteDetalle() {
   const id = Number(useParams().id)
-  const { personas } = useSesion()
+  const { personas, veCostos } = useSesion()
   const { datos, cargando, error } = useDatos(async () => {
     const lote = (await leer(supabase.from('inventario_lotes').select('*').eq('id', id).single())) as LoteInventario
     const extra = (await leer(supabase.from('lotes').select('foto_ticket_url, fotos').eq('id', id).single())) as { foto_ticket_url: string | null; fotos: string[] }
@@ -92,11 +95,15 @@ export function LoteDetalle() {
     const inspecciones = (await leer(supabase.from('inspecciones_calidad').select('*').eq('lote_id', id).order('fecha'))) as Inspeccion[]
     const campo = lote.orden_produccion_id ? 'lote_pt_id' : 'lote_mp_id'
     const consumos = (await leer(supabase.from('consumos_produccion').select('*').eq(campo, id))) as Consumo[]
-    return { lote, extra, kardex, inspecciones, consumos }
+    const clientes = lote.orden_produccion_id
+      ? ((await leer(supabase.from('entregas_por_lote').select('*').eq('lote_id', id))) as EntregaCliente[])
+      : []
+    const costo = veCostos ? ((await rpc<CostoLote[]>('reporte_costo_lote', { p_lote_id: id }))[0] ?? null) : null
+    return { lote, extra, kardex, inspecciones, consumos, clientes, costo }
   }, [id])
 
   if (!datos) return <Pantalla titulo="Lote" atras><Cargando cargando={cargando} error={error} /></Pantalla>
-  const { lote, extra, kardex, inspecciones, consumos } = datos
+  const { lote, extra, kardex, inspecciones, consumos, clientes, costo } = datos
   const esPT = !!lote.orden_produccion_id
 
   return (
@@ -152,6 +159,31 @@ export function LoteDetalle() {
           </div>
         ))}
       </Tarjeta>
+
+      {esPT && (
+        <Tarjeta titulo="Trazabilidad: a qué clientes llegó">
+          {clientes.length === 0 && <div className="texto-suave">Todavía no se ha entregado a ningún cliente.</div>}
+          {clientes.map((c) => (
+            <div key={c.orden_id} className="asignacion">
+              <strong>{c.cliente}</strong> · {num(c.sacos)} sacos · <Link to={`/ventas/${c.venta_id}`}>{c.venta}</Link>
+              <div className="texto-suave">Recibió {c.recibido_por_nombre} · {fechaHora(c.recibida_en)}</div>
+            </div>
+          ))}
+        </Tarjeta>
+      )}
+
+      {costo && (
+        <Tarjeta titulo="Costo">
+          <Fila izquierda={esPT ? 'Costo por saco' : `Costo por ${lote.unidad}`} derecha={<strong>{cordobas(costo.costo_unitario)}</strong>} />
+          {costo.costo_total !== null && (
+            <>
+              <Fila izquierda="Materia prima usada" derecha={cordobas(costo.costo_materia_prima)} />
+              <Fila izquierda="Gastos de planta" derecha={cordobas(costo.gasto_planta)} />
+              <Fila izquierda="Costo total del lote" derecha={cordobas(costo.costo_total)} />
+            </>
+          )}
+        </Tarjeta>
+      )}
 
       <Tarjeta titulo="Kárdex">
         {kardex.length === 0 && <div className="texto-suave">Sin movimientos.</div>}

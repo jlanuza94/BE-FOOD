@@ -15,6 +15,13 @@ import { Conteos } from './pages/Conteos'
 import { Avisos } from './pages/Avisos'
 import { Catalogos, Usuarios } from './pages/Ajustes'
 import { Merma } from './pages/Merma'
+import { Ventas, VentaDetalle, VentaNueva } from './pages/Ventas'
+import { Clientes } from './pages/Clientes'
+import { Cobros, FacturaDetalle } from './pages/Cobros'
+import { Pagos } from './pages/Pagos'
+import { Gastos } from './pages/Gastos'
+import { Costos } from './pages/Costos'
+import { Utilidad } from './pages/Utilidad'
 
 export function App() {
   const { sesion, perfil, cargando } = useSesion()
@@ -45,6 +52,16 @@ export function App() {
         <Route path="/produccion/:id" element={<ProduccionDetalle />} />
         <Route path="/conteos" element={<Conteos />} />
         <Route path="/merma" element={<Merma />} />
+        <Route path="/ventas" element={<Ventas />} />
+        <Route path="/ventas/nueva" element={<VentaNueva />} />
+        <Route path="/ventas/:id" element={<VentaDetalle />} />
+        <Route path="/clientes" element={<Clientes />} />
+        <Route path="/cobros" element={<Cobros />} />
+        <Route path="/facturas/:id" element={<FacturaDetalle />} />
+        <Route path="/pagos" element={<Pagos />} />
+        <Route path="/gastos" element={<Gastos />} />
+        <Route path="/costos" element={<Costos />} />
+        <Route path="/utilidad" element={<Utilidad />} />
         <Route path="/avisos" element={<Avisos />} />
         <Route path="/ajustes" element={<Catalogos />} />
         <Route path="/proveedores" element={<Navigate to="/ajustes" replace />} />

@@ -14,3 +14,9 @@ export function fecha(iso: string | null | undefined): string {
   const d = iso.length === 10 ? new Date(iso + 'T12:00:00') : new Date(iso)
   return d.toLocaleDateString('es-NI', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
+
+const moneda = new Intl.NumberFormat('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+export function cordobas(n: number | null | undefined): string {
+  return n === null || n === undefined ? '—' : `C$ ${moneda.format(Number(n))}`
+}

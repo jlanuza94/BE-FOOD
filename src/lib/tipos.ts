@@ -18,7 +18,7 @@ export const ROLES: Record<Rol, string> = {
 
 export type EstadoLote = 'cuarentena' | 'liberado' | 'rechazado' | 'vencido'
 export type EstadoOrden = 'pedida' | 'aprobada' | 'entregada' | 'recibida' | 'anulada'
-export type TipoOrden = 'requisicion_mp' | 'entrega_pt'
+export type TipoOrden = 'requisicion_mp' | 'entrega_pt' | 'despacho'
 export type EstadoOP = 'pendiente' | 'aprobada' | 'en_proceso' | 'terminada' | 'anulada'
 export type Etapa = 'molienda' | 'dosificacion' | 'mezcla' | 'peletizado' | 'envasado'
 export type Turno = 'manana' | 'tarde' | 'noche'
@@ -31,13 +31,14 @@ export const TURNOS: Record<Turno, string> = { manana: 'Mañana', tarde: 'Tarde'
 export const TIPO_ORDEN: Record<TipoOrden, string> = {
   requisicion_mp: 'Materia prima a Producción',
   entrega_pt: 'Sacos a Bodega',
+  despacho: 'Despacho a cliente',
 }
 
 export interface Perfil { id: string; nombre: string; rol: Rol; activo: boolean }
 export interface Item {
   id: number; codigo: string; nombre: string; tipo: 'materia_prima' | 'producto_terminado' | 'empaque'
   unidad: 'lb' | 'saco'; stock_minimo: number; vida_util_dias: number | null; critico: boolean
-  peso_saco_lb: number | null; activo: boolean
+  peso_saco_lb: number | null; activo: boolean; precio_venta: number | null
 }
 export interface Ubicacion { id: number; nombre: string; tipo: string; activa: boolean }
 export interface Proveedor { id: number; nombre: string; contacto: string | null; telefono: string | null; activo: boolean }
@@ -58,7 +59,7 @@ export interface InventarioItem {
 
 export interface Orden {
   id: number; numero: string; tipo: TipoOrden; estado: EstadoOrden; orden_produccion_id: number | null
-  notas: string | null
+  venta_id: number | null; notas: string | null
   pedida_por: string; pedida_en: string
   aprobada_por: string | null; aprobada_en: string | null
   entregada_por: string | null; entregada_en: string | null
@@ -94,4 +95,48 @@ export interface OrdenCompraLinea {
 
 export interface Aviso {
   id: number; creado_en: string; tipo: string; mensaje: string; enlace: string | null; leido_por: string[]
+}
+
+/** Los roles que pueden ver costos, gastos y utilidad (el vendedor no). */
+export const VEN_COSTOS: Rol[] = ['socio', 'administracion', 'inventario', 'jefe_produccion']
+
+export interface Cliente {
+  id: number; nombre: string; telefono: string | null; direccion: string | null
+  dias_credito: number; limite_credito: number; activo: boolean
+}
+export interface VentaResumen {
+  id: number; numero: string; cliente_id: number; cliente: string; condicion: 'contado' | 'credito'
+  estado: 'abierta' | 'completa' | 'anulada'; creada_en: string; creada_por: string
+  sacos: number; total: number; sacos_entregados: number; facturado: number
+}
+export interface VentaLinea { id: number; venta_id: number; item_id: number; sacos: number; precio_lista: number | null; precio_unitario: number }
+export interface CuentaPorCobrar {
+  id: number; numero: string; venta_id: number; cliente_id: number; cliente: string; fecha: string; vence: string
+  condicion: string; total: number; abonado: number; saldo: number; dias_atraso: number
+}
+export interface CuentaPorPagar {
+  id: number; numero: string; orden_compra_id: number; orden_compra: string; proveedor_id: number; proveedor: string
+  fecha: string; vence: string; monto: number; pagado: number; en_tramite: number; saldo: number; dias_para_vencer: number
+}
+export interface PagoProveedor {
+  id: number; factura_proveedor_id: number; monto: number; estado: 'solicitado' | 'aprobado' | 'pagado' | 'rechazado'
+  solicitado_por: string; solicitado_en: string; aprobado_por: string | null; aprobado_en: string | null
+  motivo_rechazo: string | null; forma: string | null; referencia: string | null; comprobante_url: string | null
+  pagado_por: string | null; pagado_en: string | null
+}
+export interface Abono {
+  id: number; factura_id: number; fecha: string; monto: number; forma: string; referencia: string | null
+  foto_url: string | null; registrado_por: string
+}
+export interface Gasto {
+  id: number; fecha: string; categoria: string; descripcion: string; monto: number; incluir_en_costo: boolean
+  foto_url: string | null; registrado_por: string; anulado: boolean; motivo_anulacion: string | null
+}
+
+export const FORMAS_PAGO: Record<string, string> = {
+  efectivo: 'Efectivo', transferencia: 'Transferencia', cheque: 'Cheque', deposito: 'Depósito',
+}
+export const CATEGORIAS_GASTO: Record<string, string> = {
+  luz: 'Luz', agua: 'Agua', salarios: 'Salarios', transporte: 'Transporte', combustible: 'Combustible',
+  mantenimiento: 'Mantenimiento', alquiler: 'Alquiler', impuestos: 'Impuestos', administracion: 'Administración', otros: 'Otros',
 }

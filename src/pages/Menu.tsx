@@ -1,9 +1,16 @@
 import { supabase } from '../lib/supabase'
 import { useSesion } from '../lib/sesion'
-import { ROLES, type Rol } from '../lib/tipos'
+import { ROLES, VEN_COSTOS, type Rol } from '../lib/tipos'
 import { Boton, Pantalla, Tarjeta } from '../components/ui'
 
 const OPCIONES: { a: string; texto: string; detalle: string; roles: Rol[] }[] = [
+  { a: '/utilidad', texto: 'Utilidad', detalle: 'Ventas, costos, gastos y ganancia', roles: VEN_COSTOS },
+  { a: '/ventas', texto: 'Ventas', detalle: 'Pedidos de clientes y despachos', roles: ['vendedor', 'administracion', 'despacho', 'bodeguero', 'socio'] },
+  { a: '/clientes', texto: 'Clientes', detalle: 'Datos, crédito y lo que deben', roles: ['vendedor', 'administracion', 'socio'] },
+  { a: '/cobros', texto: 'Cobros', detalle: 'Facturas y abonos de clientes', roles: ['administracion', 'vendedor', 'socio'] },
+  { a: '/pagos', texto: 'Pagos a proveedores', detalle: 'Facturas, aprobación y comprobantes', roles: ['administracion', 'inventario', 'socio'] },
+  { a: '/gastos', texto: 'Gastos', detalle: 'Luz, salarios, transporte y demás', roles: ['administracion', 'socio'] },
+  { a: '/costos', texto: 'Costo por saco', detalle: 'Cuánto cuesta y cuánto se gana', roles: VEN_COSTOS },
   { a: '/ordenes', texto: 'Órdenes', detalle: 'Pedir, aprobar, entregar y recibir', roles: [] },
   { a: '/inventario', texto: 'Inventario', detalle: 'Existencias por lote, kárdex y etiquetas', roles: [] },
   { a: '/recepcion', texto: 'Recibir materia prima', detalle: 'Pesaje, foto del ticket y cuarentena', roles: ['inventario', 'bodeguero'] },

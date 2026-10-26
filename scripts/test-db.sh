@@ -11,4 +11,6 @@ psql -q -v ON_ERROR_STOP=1 -d "$DB" -f supabase/tests/stub_supabase.sql
 for f in $(ls supabase/migrations/*.sql | grep -v _supabase_); do
   psql -q -v ON_ERROR_STOP=1 -d "$DB" -f "$f"
 done
-psql -q -v ON_ERROR_STOP=1 -d "$DB" -f supabase/tests/etapa1.sql
+for t in supabase/tests/etapa*.sql; do
+  psql -q -v ON_ERROR_STOP=1 -d "$DB" -f "$t"
+done
