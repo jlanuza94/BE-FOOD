@@ -22,6 +22,8 @@ import { Pagos } from './pages/Pagos'
 import { Gastos } from './pages/Gastos'
 import { Costos } from './pages/Costos'
 import { Utilidad } from './pages/Utilidad'
+import { Bitacora } from './pages/Bitacora'
+import { Escanear } from './pages/Escanear'
 
 export function App() {
   const { sesion, perfil, cargando } = useSesion()
@@ -63,6 +65,8 @@ export function App() {
         <Route path="/costos" element={<Costos />} />
         <Route path="/utilidad" element={<Utilidad />} />
         <Route path="/avisos" element={<Avisos />} />
+        <Route path="/bitacora" element={<Bitacora />} />
+        <Route path="/escanear" element={<Escanear />} />
         <Route path="/ajustes" element={<Catalogos />} />
         <Route path="/proveedores" element={<Navigate to="/ajustes" replace />} />
         <Route path="/usuarios" element={<Usuarios />} />

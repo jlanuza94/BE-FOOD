@@ -1,7 +1,9 @@
 import { supabase } from '../lib/supabase'
 import { useSesion } from '../lib/sesion'
 import { ROLES, VEN_COSTOS, type Rol } from '../lib/tipos'
-import { Boton, Pantalla, Tarjeta } from '../components/ui'
+import { useState } from 'react'
+import { Boton, Campo, Pantalla, Selector, Tarjeta } from '../components/ui'
+import { aplicarTema, temaGuardado, TEMAS, type Tema } from '../lib/tema'
 
 const OPCIONES: { a: string; texto: string; detalle: string; roles: Rol[] }[] = [
   { a: '/utilidad', texto: 'Utilidad', detalle: 'Ventas, costos, gastos y ganancia', roles: VEN_COSTOS },
@@ -11,6 +13,8 @@ const OPCIONES: { a: string; texto: string; detalle: string; roles: Rol[] }[] = 
   { a: '/pagos', texto: 'Pagos a proveedores', detalle: 'Facturas, aprobación y comprobantes', roles: ['administracion', 'inventario', 'socio'] },
   { a: '/gastos', texto: 'Gastos', detalle: 'Luz, salarios, transporte y demás', roles: ['administracion', 'socio'] },
   { a: '/costos', texto: 'Costo por saco', detalle: 'Cuánto cuesta y cuánto se gana', roles: VEN_COSTOS },
+  { a: '/bitacora', texto: 'Bitácora de turno', detalle: 'Notas del turno que sale al que entra', roles: [] },
+  { a: '/escanear', texto: 'Escanear QR', detalle: 'Ver si un lote se puede usar', roles: [] },
   { a: '/ordenes', texto: 'Órdenes', detalle: 'Pedir, aprobar, entregar y recibir', roles: [] },
   { a: '/inventario', texto: 'Inventario', detalle: 'Existencias por lote, kárdex y etiquetas', roles: [] },
   { a: '/recepcion', texto: 'Recibir materia prima', detalle: 'Pesaje, foto del ticket y cuarentena', roles: ['inventario', 'bodeguero'] },
@@ -26,6 +30,7 @@ const OPCIONES: { a: string; texto: string; detalle: string; roles: Rol[] }[] = 
 
 export function Menu() {
   const { perfil, puede } = useSesion()
+  const [tema, setTema] = useState<Tema>(temaGuardado())
   const soloGerencia = new Set(['/usuarios', '/ajustes'])
   const visibles = OPCIONES.filter((o) =>
     soloGerencia.has(o.a) ? perfil?.rol === 'gerencia' : o.roles.length === 0 || puede(...o.roles),
@@ -40,6 +45,13 @@ export function Menu() {
           <div className="texto-suave">{o.detalle}</div>
         </Tarjeta>
       ))}
+      <Tarjeta>
+        <Campo etiqueta="Pantalla" ayuda="El modo oscuro no encandila en los turnos de madrugada.">
+          <Selector value={tema} onChange={(e) => { const t = e.target.value as Tema; setTema(t); aplicarTema(t) }}>
+            {Object.entries(TEMAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </Selector>
+        </Campo>
+      </Tarjeta>
       <Boton variante="secundario" onClick={() => supabase.auth.signOut()}>Salir</Boton>
     </Pantalla>
   )

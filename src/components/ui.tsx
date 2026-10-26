@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { enlaceWhatsApp } from '../lib/whatsapp'
 
 export function Pantalla({ titulo, atras, children, accion }: {
   titulo: string
@@ -98,5 +99,14 @@ export function Fila({ izquierda, derecha }: { izquierda: ReactNode; derecha: Re
       <span>{izquierda}</span>
       <span className="fila-derecha">{derecha}</span>
     </div>
+  )
+}
+
+/** Abre WhatsApp con el mensaje ya escrito; la persona solo le da enviar. */
+export function BotonWhatsApp({ texto, telefono, children }: { texto: string; telefono?: string | null; children: ReactNode }) {
+  return (
+    <a className="boton boton-whatsapp" href={enlaceWhatsApp(texto, telefono)} target="_blank" rel="noreferrer">
+      <span aria-hidden>💬</span>{children}
+    </a>
   )
 }

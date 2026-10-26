@@ -5,7 +5,7 @@ import { useAccion, useDatos } from '../lib/usar'
 import { useSesion } from '../lib/sesion'
 import { cordobas, fecha, fechaHora, num } from '../lib/formato'
 import { FORMAS_PAGO, type Abono, type CuentaPorCobrar } from '../lib/tipos'
-import { Boton, Campo, Cargando, Entrada, MensajeError, Fila, Nota, Pantalla, Selector, Tarjeta, Vacio } from '../components/ui'
+import { Boton, BotonWhatsApp, Campo, Cargando, Entrada, MensajeError, Fila, Nota, Pantalla, Selector, Tarjeta, Vacio } from '../components/ui'
 import { TomarFoto, VerFoto } from '../components/Fotos'
 
 export function Cobros() {
@@ -56,6 +56,9 @@ export function FacturaDetalle() {
     abonos: (await leer(supabase.from('abonos').select('*').eq('factura_id', id).order('fecha'))) as Abono[],
     lotes: new Map(((await leer(supabase.from('lotes').select('id, codigo'))) as { id: number; codigo: string }[]).map((l) => [l.id, l.codigo])),
   }), [id])
+  const { datos: telefono } = useDatos(async () => datos
+    ? ((await leer(supabase.from('clientes').select('telefono').eq('id', datos.factura.cliente_id).single())) as { telefono: string | null }).telefono
+    : null, [datos?.factura.cliente_id])
   const [monto, setMonto] = useState('')
   const [forma, setForma] = useState('efectivo')
   const [referencia, setReferencia] = useState('')
@@ -118,6 +121,13 @@ export function FacturaDetalle() {
         </Tarjeta>
       )}
       {Number(f.saldo) > 0 && !puede('administracion') && <Nota>Los abonos los registra Administración.</Nota>}
+      {Number(f.saldo) > 0 && (
+        <BotonWhatsApp telefono={telefono} texto={
+          `Hola ${f.cliente}, le saluda BE Food. Le recordamos que la factura ${f.numero} tiene un saldo de ${cordobas(f.saldo)}` +
+          (f.condicion === 'credito' ? `, ${f.dias_atraso > 0 ? `venció el ${fecha(f.vence)}` : `vence el ${fecha(f.vence)}`}` : '') +
+          '. ¡Gracias!'
+        }>Recordar el pago por WhatsApp</BotonWhatsApp>
+      )}
     </Pantalla>
   )
 }

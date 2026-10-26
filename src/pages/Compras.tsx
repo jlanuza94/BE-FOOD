@@ -7,6 +7,7 @@ import { fechaHora, num } from '../lib/formato'
 import type { OrdenCompra, OrdenCompraLinea } from '../lib/tipos'
 import { Boton, Campo, Cargando, MensajeError, Estado, Fila, Pantalla, Selector, Tarjeta, Texto, Vacio } from '../components/ui'
 import { EditarLineas, type LineaEditable } from '../components/Lineas'
+import { Comentarios } from '../components/Comentarios'
 
 export function Compras() {
   const { proveedores, puede } = useSesion()
@@ -125,6 +126,7 @@ export function CompraDetalle() {
           </Boton>
         </Tarjeta>
       )}
+      <Comentarios entidad="orden_compra" id={id} />
     </Pantalla>
   )
 }

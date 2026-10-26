@@ -4,10 +4,11 @@ import { leer, rpc, subirFoto, supabase } from '../lib/supabase'
 import { useAccion, useDatos } from '../lib/usar'
 import { useSesion } from '../lib/sesion'
 import { fechaHora, num } from '../lib/formato'
-import { TIPO_ORDEN, type Asignacion, type LoteInventario, type Orden, type OrdenLinea, type Rol } from '../lib/tipos'
-import { Boton, Campo, Cargando, Entrada, MensajeError, Estado, Nota, Pantalla, Tarjeta, Texto, Vacio } from '../components/ui'
+import { TIPO_ORDEN, type Asignacion, type Item, type LoteInventario, type Orden, type OrdenLinea, type Rol } from '../lib/tipos'
+import { Boton, BotonWhatsApp, Campo, Cargando, Entrada, MensajeError, Estado, Nota, Pantalla, Tarjeta, Texto, Vacio } from '../components/ui'
 import { Firma } from '../components/Firma'
 import { VerFoto } from '../components/Fotos'
+import { Comentarios } from '../components/Comentarios'
 
 export function Ordenes() {
   const [filtro, setFiltro] = useState<'abiertas' | 'todas'>('abiertas')
@@ -41,8 +42,9 @@ interface Detalle {
   asignaciones: Asignacion[]
   lotes: Map<number, LoteInventario>
   op: { id: number; numero: string } | null
-  venta: { id: number; numero: string; cliente: string } | null
+  venta: { id: number; numero: string; cliente: string; cliente_id: number } | null
   entrega: { recibido_por_nombre: string; firma_url: string } | null
+  telefono: string | null
 }
 
 // Quién hace cada paso según el tipo de orden (la base de datos lo vuelve a revisar).
@@ -68,12 +70,15 @@ export function OrdenDetalle() {
       ? ((await leer(supabase.from('ordenes_produccion').select('id, numero').eq('id', orden.orden_produccion_id).single())) as { id: number; numero: string })
       : null
     const venta = orden.venta_id
-      ? ((await leer(supabase.from('ventas_resumen').select('id, numero, cliente').eq('id', orden.venta_id).single())) as { id: number; numero: string; cliente: string })
+      ? ((await leer(supabase.from('ventas_resumen').select('id, numero, cliente, cliente_id').eq('id', orden.venta_id).single())) as { id: number; numero: string; cliente: string; cliente_id: number })
+      : null
+    const telefono = venta
+      ? ((await leer(supabase.from('clientes').select('telefono').eq('id', venta.cliente_id).single())) as { telefono: string | null }).telefono
       : null
     const entrega = orden.tipo === 'despacho'
       ? ((await leer(supabase.from('entregas_cliente').select('*').eq('orden_id', id).maybeSingle())) as { recibido_por_nombre: string; firma_url: string } | null)
       : null
-    return { orden, lineas, asignaciones, lotes: new Map(lotes.map((l) => [l.id, l])), op, venta, entrega }
+    return { orden, lineas, asignaciones, lotes: new Map(lotes.map((l) => [l.id, l])), op, venta, entrega, telefono }
   }, [id])
 
   const [cantidades, setCantidades] = useState<Record<number, string>>({})
@@ -85,7 +90,7 @@ export function OrdenDetalle() {
   const { ocupado, error: errorAccion, correr } = useAccion()
 
   if (!datos) return <Pantalla titulo="Orden" atras><Cargando cargando={cargando} error={error} /></Pantalla>
-  const { orden, lineas, asignaciones, lotes, op, venta, entrega } = datos
+  const { orden, lineas, asignaciones, lotes, op, venta, entrega, telefono } = datos
   const esDespacho = orden.tipo === 'despacho'
   const quien = QUIEN[orden.tipo]
   const nombre = (uid: string | null) => (uid ? personas.get(uid)?.nombre ?? '—' : '—')
@@ -244,6 +249,12 @@ export function OrdenDetalle() {
       {puedeRecibir && (
         <Boton onClick={recibir} ocupado={ocupado}>{esDespacho ? 'Confirmar entrega y hacer factura' : 'Confirmar lo recibido'}</Boton>
       )}
+      {esDespacho && venta && (paso === 'aprobada' || paso === 'entregada') && puede('despacho', 'vendedor') && (
+        <BotonWhatsApp telefono={telefono} texto={mensajeEnCamino(venta, lineas, asignaciones, items)}>
+          Avisar al cliente que va en camino
+        </BotonWhatsApp>
+      )}
+      <Comentarios entidad="orden" id={id} />
       {puedeAnular && !anulando && <Boton variante="secundario" onClick={() => setAnulando(true)}>Anular orden</Boton>}
       {anulando && (
         <Tarjeta titulo="Anular orden">
@@ -255,4 +266,15 @@ export function OrdenDetalle() {
       )}
     </Pantalla>
   )
+}
+
+function mensajeEnCamino(
+  venta: { numero: string; cliente: string }, lineas: OrdenLinea[], asignaciones: Asignacion[], items: Map<number, Item>,
+): string {
+  const detalle = lineas.map((l) => {
+    const sacos = asignaciones.filter((a) => a.orden_linea_id === l.id)
+      .reduce((t, a) => t + Number(a.cantidad_entregada ?? a.cantidad_asignada), 0)
+    return `${num(sacos)} ${sacos === 1 ? 'saco' : 'sacos'} de ${items.get(l.item_id)?.nombre ?? ''}`
+  }).join(', ')
+  return `Hola ${venta.cliente}, le saluda BE Food. Su pedido ${venta.numero} (${detalle}) va en camino. ¡Gracias por su compra!`
 }
