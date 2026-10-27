@@ -80,7 +80,7 @@ export function PlanillaDetalle() {
   const borrador = p.estado === 'borrador'
 
   return (
-    <Pantalla titulo={p.numero} atras>
+    <Pantalla titulo={p.numero} atras pdf={`Planilla ${p.numero}`}>
       <Tarjeta titulo={<>Del {fecha(p.desde)} al {fecha(p.hasta)} <Estado valor={p.estado} /></>}>
         <Fila izquierda="Total bruto" derecha={cordobas(suma('bruto'))} />
         <Fila izquierda={<strong>A pagar a los empleados</strong>} derecha={<strong>{cordobas(suma('neto'))}</strong>} />

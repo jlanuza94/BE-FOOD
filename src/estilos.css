@@ -235,12 +235,31 @@ td .entrada { min-height: 44px; text-align: right; max-width: 130px; }
 .ingreso-sub { color: var(--suave); margin: 0; }
 .ingreso-form { display: flex; flex-direction: column; gap: 14px; text-align: left; }
 
-/* Al imprimir sale solo la etiqueta del lote */
+/* Al imprimir la etiqueta del lote sale solo la etiqueta */
 @media print {
-  body * { visibility: hidden; }
-  #etiqueta, #etiqueta * { visibility: visible; }
+  body:not(.modo-pdf) * { visibility: hidden; }
+  body:not(.modo-pdf) #etiqueta, body:not(.modo-pdf) #etiqueta * { visibility: visible; }
   #etiqueta { position: absolute; left: 0; top: 0; }
   .etiqueta-qr { width: 3.5cm; height: 3.5cm; }
+}
+
+/* PDF de una pantalla: en blanco y negro, sin botones, menú ni formularios */
+.pdf-membrete { display: none; }
+@media print {
+  html:has(body.modo-pdf) { background: #fff; }
+  body.modo-pdf { background: #fff; color: #000; --fondo: #fff; --tarjeta: #fff; --texto: #000; --suave: #444; --borde: #999; --linea-tabla: #bbb; }
+  body.modo-pdf .nav-inferior, body.modo-pdf .boton-atras, body.modo-pdf .encabezado-accion,
+  body.modo-pdf button, body.modo-pdf input, body.modo-pdf select, body.modo-pdf textarea,
+  body.modo-pdf .pestanas, body.modo-pdf .mensaje-error, body.modo-pdf .boton-whatsapp, body.modo-pdf .no-pdf,
+  body.modo-pdf .foto-nueva, body.modo-pdf .campo:has(input, select, textarea, canvas),
+  body.modo-pdf .tarjeta:has(input, select, textarea, canvas) { display: none !important; }
+  body.modo-pdf .encabezado { position: static; background: #fff; color: #000; box-shadow: none; padding: 0 0 4px; border-bottom: 2px solid #000; }
+  body.modo-pdf .pdf-membrete { display: flex; justify-content: space-between; font-size: .85rem; padding: 4px 0 10px; }
+  body.modo-pdf .contenido { padding: 0; max-width: none; }
+  body.modo-pdf .tarjeta, body.modo-pdf .cifra { background: #fff; color: #000; border-color: #999; box-shadow: none; break-inside: avoid; }
+  body.modo-pdf .cifra-grande, body.modo-pdf .cifra-grande .texto-suave { background: #fff; color: #000; }
+  body.modo-pdf a { color: #000; text-decoration: none; }
+  body.modo-pdf .texto-suave { color: #444; }
 }
 .tabla tr.diferencia td.num { white-space: normal; }
 

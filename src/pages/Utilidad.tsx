@@ -28,7 +28,7 @@ export function Utilidad() {
   const { datos: r, cargando, error } = useDatos(() => rpc<Reporte>('reporte_utilidad', { p_desde: desde, p_hasta: hasta }), [desde, hasta])
 
   return (
-    <Pantalla titulo="Utilidad" atras>
+    <Pantalla titulo="Utilidad" atras pdf="Utilidad BE Food">
       <div className="pestanas">
         {([['hoy', 'Hoy'], ['mes', 'Este mes'], ['anterior', 'Mes pasado'], ['anio', 'Este año']] as const).map(([k, t]) => (
           <button key={k} className={p === k ? 'activa' : ''} onClick={() => setP(k)}>{t}</button>

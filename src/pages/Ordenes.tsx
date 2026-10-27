@@ -138,7 +138,7 @@ export function OrdenDetalle() {
   const puedeAnular = (paso === 'pedida' || paso === 'aprobada') && (orden.pedida_por === perfil?.id || puede(...quien.anula))
 
   return (
-    <Pantalla titulo={orden.numero} atras>
+    <Pantalla titulo={orden.numero} atras pdf={`Orden ${orden.numero}`}>
       <Tarjeta titulo={<>{TIPO_ORDEN[orden.tipo]} <Estado valor={orden.estado} /></>}>
         {op && <div>Producción: <Link to={`/produccion/${op.id}`}>{op.numero}</Link></div>}
         {orden.orden_trabajo_id && <div><Link to={`/mantenimiento/${orden.orden_trabajo_id}`}>Ver la orden de trabajo</Link></div>}

@@ -14,7 +14,7 @@ interface DetalleFormula { item: string; unidad: string; cantidad_por_saco: numb
 export function Costos() {
   const { datos, cargando, error } = useDatos(() => rpc<CostoFormula[]>('reporte_costo_formulas'))
   return (
-    <Pantalla titulo="Costo por saco" atras>
+    <Pantalla titulo="Costo por saco" atras pdf="Costo por saco BE Food">
       <Nota>Se calcula con la fórmula, el precio promedio de compra de los últimos 90 días y los gastos de planta del último mes.</Nota>
       <Cargando cargando={cargando && !datos} error={error} />
       {datos?.length === 0 && <Vacio>Todavía no hay fórmulas.</Vacio>}

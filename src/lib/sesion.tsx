@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { leer, supabase } from './supabase'
-import { VEN_COSTOS, type Item, type Perfil, type Proveedor, type Rol, type Ubicacion } from './tipos'
+import { leer, rpc, supabase } from './supabase'
+import { VEN_CLIENTES, VEN_COSTOS, VEN_FACTURAS, VEN_FORMULAS, VEN_PRECIOS, type Item, type Perfil, type Proveedor, type Rol, type Ubicacion } from './tipos'
 
 interface Sesion {
   sesion: Session | null
@@ -16,6 +16,11 @@ interface Sesion {
   puede: (...roles: Rol[]) => boolean
   /** Si puede ver costos, gastos y utilidad (el vendedor no). */
   veCostos: boolean
+  /** Lo que cada grupo puede ver; la base de datos lo hace cumplir. */
+  veClientes: boolean
+  veFacturas: boolean
+  veFormulas: boolean
+  vePrecios: boolean
 }
 
 const Contexto = createContext<Sesion | null>(null)
@@ -34,12 +39,14 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
   const recargarCatalogos = useCallback(async () => {
     const [p, i, u, pr] = await Promise.all([
       leer(supabase.from('perfiles').select('*').order('nombre')),
-      leer(supabase.from('items').select('*').order('nombre')),
+      // El precio de venta no se lee de items: solo lo da precios_venta() a quien puede verlo
+      leer(supabase.from('items').select('id, codigo, nombre, tipo, unidad, stock_minimo, vida_util_dias, critico, peso_saco_lb, activo').order('nombre')),
       leer(supabase.from('ubicaciones').select('*').order('nombre')),
       leer(supabase.from('proveedores').select('*').order('nombre')),
     ])
+    const precios = new Map((await rpc<{ item_id: number; precio_venta: number }[]>('precios_venta')).map((x) => [x.item_id, x.precio_venta]))
     setPersonas(porId(p as Perfil[]))
-    setItems(porId(i as Item[]))
+    setItems(porId((i as Omit<Item, 'precio_venta'>[]).map((x) => ({ ...x, precio_venta: precios.get(x.id) ?? null }))))
     setUbicaciones(porId(u as Ubicacion[]))
     setProveedores(porId(pr as Proveedor[]))
   }, [])
@@ -83,6 +90,10 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
       value={{
         sesion, perfil, cargando, personas, items, ubicaciones, proveedores, recargarCatalogos, puede,
         veCostos: puede(...VEN_COSTOS),
+        veClientes: puede(...VEN_CLIENTES),
+        veFacturas: puede(...VEN_FACTURAS),
+        veFormulas: puede(...VEN_FORMULAS),
+        vePrecios: puede(...VEN_PRECIOS),
       }}
     >
       {children}

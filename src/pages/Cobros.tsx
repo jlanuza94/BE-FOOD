@@ -76,7 +76,7 @@ export function FacturaDetalle() {
   })).then((ok) => { if (ok) { setMonto(''); setReferencia(''); setFotos([]); recargar() } })
 
   return (
-    <Pantalla titulo={f.numero} atras>
+    <Pantalla titulo={f.numero} atras pdf={`Factura ${f.numero}`}>
       <Tarjeta titulo={f.cliente}>
         <Fila izquierda="Fecha" derecha={fecha(f.fecha)} />
         <Fila izquierda="Forma de pago" derecha={f.condicion === 'credito' ? `Crédito, vence ${fecha(f.vence)}` : 'Contado'} />
