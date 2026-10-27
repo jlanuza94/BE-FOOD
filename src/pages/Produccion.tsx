@@ -160,7 +160,7 @@ export function ProduccionDetalle() {
   const rendimiento = op.sacos_producidos !== null ? (op.sacos_producidos / op.sacos_planificados) * 100 : null
 
   return (
-    <Pantalla titulo={op.numero} atras>
+    <Pantalla titulo={op.numero} atras pdf={`Orden de producción ${op.numero}`}>
       <Tarjeta titulo={<>{producto?.nombre} <Estado valor={op.estado} /></>}>
         <Fila izquierda="Fórmula" derecha={<Link to="/formulas">versión {formula.version}</Link>} />
         <Fila izquierda="Sacos planificados" derecha={op.sacos_planificados} />

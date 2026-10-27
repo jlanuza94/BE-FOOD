@@ -68,8 +68,10 @@ select pruebas.error($$select public.confirmar_entrega_cliente((select id from p
 select public.confirmar_entrega_cliente((select id from public.ordenes where venta_id = 1),
   (select jsonb_agg(jsonb_build_object('asignacion_id', a.id, 'cantidad', 9)) from public.ordenes_asignaciones a join public.ordenes_lineas ol on ol.id = a.orden_linea_id join public.ordenes o on o.id = ol.orden_id where o.venta_id = 1),
   'Don Julio', 'firmas/1.png');
+reset role;
 select pruebas.igual((select total from public.facturas where venta_id = 1), 13050::numeric, 'Factura por lo recibido');
 select pruebas.igual((select vence from public.facturas where venta_id = 1), public.hoy() + 30, 'Vence según el crédito');
+set role authenticated;
 select pruebas.igual((select estado from public.ventas where id = 1), 'abierta', 'Quedan 3 sacos pendientes');
 select pruebas.igual((select cliente from public.entregas_por_lote where lote_id = (select lote_pt_id from public.ordenes_produccion where id = 1)),
                      'Granja El Porvenir', 'Trazabilidad hasta el cliente');

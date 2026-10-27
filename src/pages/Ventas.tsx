@@ -10,7 +10,7 @@ import { Comentarios } from '../components/Comentarios'
 
 export function Ventas() {
   const [filtro, setFiltro] = useState<'abiertas' | 'todas'>('abiertas')
-  const { puede } = useSesion()
+  const { puede, vePrecios } = useSesion()
   const { datos, cargando, error } = useDatos(async () => {
     let q = supabase.from('ventas_resumen').select('*').order('id', { ascending: false }).limit(100)
     if (filtro === 'abiertas') q = q.eq('estado', 'abierta')
@@ -29,7 +29,7 @@ export function Ventas() {
       {datos?.map((v) => (
         <Tarjeta key={v.id} a={`/ventas/${v.id}`} titulo={<>{v.numero} <Estado valor={v.estado} /></>}>
           <div>{v.cliente} · {num(v.sacos_entregados)} de {num(v.sacos)} sacos entregados</div>
-          <div className="texto-suave">{cordobas(v.total)} · {v.condicion === 'credito' ? 'crédito' : 'contado'} · {fechaHora(v.creada_en)}</div>
+          <div className="texto-suave">{vePrecios && <>{cordobas(v.total)} · </>}{v.condicion === 'credito' ? 'crédito' : 'contado'} · {fechaHora(v.creada_en)}</div>
         </Tarjeta>
       ))}
     </Pantalla>
@@ -115,7 +115,7 @@ export function VentaNueva() {
 
 export function VentaDetalle() {
   const id = Number(useParams().id)
-  const { items, personas, puede, perfil } = useSesion()
+  const { items, personas, puede, perfil, vePrecios } = useSesion()
   const { datos, cargando, error, recargar } = useDatos(async () => ({
     venta: (await leer(supabase.from('ventas_resumen').select('*').eq('id', id).single())) as VentaResumen,
     lineas: (await leer(supabase.from('ventas_lineas').select('*').eq('venta_id', id).order('id'))) as VentaLinea[],
@@ -141,13 +141,13 @@ export function VentaDetalle() {
       <Tarjeta titulo="Productos">
         {lineas.map((l) => (
           <div key={l.id} className="asignacion">
-            <Fila izquierda={items.get(l.item_id)?.nombre} derecha={`${l.sacos} sacos × ${cordobas(l.precio_unitario)}`} />
-            {l.precio_lista !== null && Number(l.precio_lista) !== Number(l.precio_unitario) && (
+            <Fila izquierda={items.get(l.item_id)?.nombre} derecha={vePrecios ? `${l.sacos} sacos × ${cordobas(l.precio_unitario)}` : `${l.sacos} sacos`} />
+            {vePrecios && l.precio_lista !== null && Number(l.precio_lista) !== Number(l.precio_unitario) && (
               <div className="texto-suave">Precio de lista {cordobas(l.precio_lista)} (cambiado por Gerencia)</div>
             )}
           </div>
         ))}
-        <Fila izquierda={<strong>Total</strong>} derecha={<strong>{cordobas(venta.total)}</strong>} />
+        {vePrecios && <Fila izquierda={<strong>Total</strong>} derecha={<strong>{cordobas(venta.total)}</strong>} />}
         <Fila izquierda="Entregado" derecha={`${num(venta.sacos_entregados)} de ${num(venta.sacos)} sacos`} />
       </Tarjeta>
       <Tarjeta titulo="Despachos">

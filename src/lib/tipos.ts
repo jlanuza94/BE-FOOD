@@ -118,6 +118,11 @@ export interface ResumenDia {
 
 /** Los roles que pueden ver costos, gastos y utilidad (el vendedor no). */
 export const VEN_COSTOS: Rol[] = ['socio', 'administracion', 'inventario', 'jefe_produccion']
+// Permisos por grupo (los mismos que ve_clientes, ve_facturas, ve_formulas y ve_precios en la base)
+export const VEN_CLIENTES: Rol[] = ['socio', 'administracion', 'vendedor', 'despacho', 'bodeguero']
+export const VEN_FACTURAS: Rol[] = ['socio', 'administracion', 'vendedor']
+export const VEN_FORMULAS: Rol[] = ['socio', 'jefe_produccion', 'calidad', 'inventario']
+export const VEN_PRECIOS: Rol[] = ['socio', 'administracion', 'vendedor', 'inventario', 'jefe_produccion']
 
 export interface Cliente {
   id: number; nombre: string; telefono: string | null; direccion: string | null

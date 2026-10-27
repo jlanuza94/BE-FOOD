@@ -136,7 +136,7 @@ export function CuentaDetalle() {
     correr(f).then((ok) => { if (ok) { limpiar(); recargar() } })
 
   return (
-    <Pantalla titulo={c.nombre} atras>
+    <Pantalla titulo={c.nombre} atras pdf={c.nombre}>
       <div className="cifras">
         <div className="cifra cifra-grande">
           <div className="texto-suave">{TIPOS_CUENTA[c.tipo]}{c.banco ? ` · ${c.banco}` : ''}{c.numero ? ` · ${c.numero}` : ''}</div>
@@ -266,7 +266,7 @@ export function FlujoCaja() {
   const { datos: f, cargando, error } = useDatos(() => rpc<Flujo>('flujo_de_caja', { p_semanas: 6 }))
   const semana = (iso: string) => `Semana del ${fecha(iso.slice(0, 10)).slice(0, 5)}`
   return (
-    <Pantalla titulo="Flujo de caja" atras>
+    <Pantalla titulo="Flujo de caja" atras pdf="Flujo de caja BE Food">
       <Cargando cargando={cargando && !f} error={error} />
       {f && (
         <>

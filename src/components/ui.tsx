@@ -2,10 +2,12 @@ import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAt
 import { Link, useNavigate } from 'react-router-dom'
 import { enlaceWhatsApp } from '../lib/whatsapp'
 
-export function Pantalla({ titulo, atras, children, accion }: {
+export function Pantalla({ titulo, atras, children, accion, pdf }: {
   titulo: string
   atras?: boolean
   accion?: ReactNode
+  /** Nombre del archivo: muestra el botón para guardar o compartir la pantalla en PDF. */
+  pdf?: string
   children: ReactNode
 }) {
   const navegar = useNavigate()
@@ -17,10 +19,32 @@ export function Pantalla({ titulo, atras, children, accion }: {
         )}
         <h1>{titulo}</h1>
         {accion}
+        {pdf && <button className="encabezado-accion encabezado-pdf" onClick={() => guardarPDF(pdf)} aria-label="Guardar en PDF">PDF</button>}
       </header>
+      {pdf && (
+        <div className="pdf-membrete">
+          <strong>BE Food Company</strong>
+          <span>{new Date().toLocaleString('es-NI', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+        </div>
+      )}
       <main className="contenido">{children}</main>
     </div>
   )
+}
+
+/** Abre la ventana de imprimir del teléfono, donde se elige "Guardar como PDF" o compartir.
+ *  El título de la página es el nombre que lleva el archivo. */
+export function guardarPDF(nombre: string) {
+  const antes = document.title
+  document.title = nombre
+  document.body.classList.add('modo-pdf')
+  const terminar = () => {
+    document.title = antes
+    document.body.classList.remove('modo-pdf')
+    window.removeEventListener('afterprint', terminar)
+  }
+  window.addEventListener('afterprint', terminar)
+  window.print()
 }
 
 export function Tarjeta({ titulo, children, a }: { titulo?: ReactNode; children?: ReactNode; a?: string }) {

@@ -15,7 +15,7 @@ export function Merma() {
     lotes: (await leer(supabase.from('ordenes_produccion').select('*').eq('estado', 'terminada').order('id', { ascending: false }).limit(30))) as OrdenProduccion[],
   }))
   return (
-    <Pantalla titulo="Merma" atras>
+    <Pantalla titulo="Merma" atras pdf="Merma BE Food">
       <Cargando cargando={cargando && !datos} error={error} />
       {datos && datos.lotes.length === 0 && <Vacio>Todavía no hay producción terminada.</Vacio>}
       {datos && datos.lotes.length > 0 && (
